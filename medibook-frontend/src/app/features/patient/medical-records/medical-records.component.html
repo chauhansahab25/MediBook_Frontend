@@ -1,0 +1,138 @@
+<div class="medical-records">
+  <!-- Animated background shapes -->
+  <div class="floating-shape shape-1"></div>
+  <div class="floating-shape shape-2"></div>
+
+  <!-- Header Section -->
+  <div class="records-header">
+    <div class="header-content">
+      <button mat-button class="back-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-icon">
+        <mat-icon>folder_special</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>Medical Records</h1>
+        <p>Access your complete medical history and documents</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading medical records...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && records.length === 0" class="empty-state">
+    <div class="empty-icon">
+      <mat-icon>folder_open</mat-icon>
+    </div>
+    <h3>No medical records found</h3>
+    <p>Your medical records will appear here after your first visit.</p>
+  </div>
+
+  <!-- Records Tabs -->
+  <div *ngIf="!loading && records.length > 0" class="records-tabs-container">
+    <mat-tab-group animationDuration="400ms" class="custom-tabs">
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>all_inclusive</mat-icon>
+          <span>All Records</span>
+        </ng-template>
+        <div class="tab-content">
+          <ng-container *ngTemplateOutlet="recordsList; context: { records: records }"></ng-container>
+        </div>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>assignment</mat-icon>
+          <span>Consultations</span>
+        </ng-template>
+        <div class="tab-content">
+          <ng-container *ngTemplateOutlet="recordsList; context: { records: getConsultationRecords() }"></ng-container>
+        </div>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>medication</mat-icon>
+          <span>Prescriptions</span>
+        </ng-template>
+        <div class="tab-content">
+          <ng-container *ngTemplateOutlet="recordsList; context: { records: getPrescriptionRecords() }"></ng-container>
+        </div>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>science</mat-icon>
+          <span>Lab Reports</span>
+        </ng-template>
+        <div class="tab-content">
+          <ng-container *ngTemplateOutlet="recordsList; context: { records: getLabRecords() }"></ng-container>
+        </div>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>more_horiz</mat-icon>
+          <span>Others</span>
+        </ng-template>
+        <div class="tab-content">
+          <ng-container *ngTemplateOutlet="recordsList; context: { records: getOtherRecords() }"></ng-container>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </div>
+
+  <ng-template #recordsList let-filteredRecords="records">
+    <div *ngIf="filteredRecords.length === 0" class="tab-empty-state">
+      <mat-icon>search_off</mat-icon>
+      <p>No records found in this category.</p>
+    </div>
+    <div class="records-grid">
+      <mat-card *ngFor="let record of filteredRecords" class="record-card">
+        <div class="card-header">
+          <div class="record-icon-wrapper" [ngClass]="(record.recordType || 'Consultation').toLowerCase().replace(' ', '-')">
+            <mat-icon>{{ getRecordIcon(record.recordType || 'Consultation') }}</mat-icon>
+          </div>
+          <div class="record-info">
+            <h3 class="record-title">{{ record.diagnosis }}</h3>
+            <p class="record-type">{{ record.recordType || 'Consultation Record' }}</p>
+          </div>
+          <div class="record-date">
+            <span>{{ record.createdAt | date:'mediumDate' }}</span>
+          </div>
+        </div>
+        <mat-card-content>
+          <div class="record-provider">
+            <mat-icon>person</mat-icon>
+            <span>{{ record.providerName || 'Provider ID: ' + record.providerId }}</span>
+          </div>
+          <div class="record-section" *ngIf="record.prescription">
+            <strong>Prescription:</strong>
+            <p>{{ record.prescription }}</p>
+          </div>
+          <div class="record-section" *ngIf="record.notes">
+            <strong>Notes:</strong>
+            <p>{{ record.notes }}</p>
+          </div>
+          <div class="record-section" *ngIf="record.followUpDate">
+            <strong>Follow Up:</strong>
+            <p>{{ record.followUpDate | date:'mediumDate' }}</p>
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button class="action-btn secondary" (click)="downloadRecord(record)">
+            <mat-icon>download</mat-icon>
+            <span>Download</span>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </ng-template>
+</div>

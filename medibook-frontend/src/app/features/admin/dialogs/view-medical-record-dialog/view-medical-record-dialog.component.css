@@ -1,0 +1,169 @@
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #00838f 0%, #00acc1 50%, #4dd0e1 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  color: white;
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px;
+  font-weight: normal;
+}
+
+.close-btn {
+  color: white;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.dialog-content {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.record-details {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detail-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #00838f;
+}
+
+.section-header mat-icon {
+  color: #00838f;
+  font-size: 24px;
+}
+
+.section-header h3 {
+  margin: 0;
+  color: #00838f;
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  font-weight: normal;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row .label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+  min-width: 140px;
+}
+
+.detail-row .value {
+  color: #333;
+  font-size: 14px;
+  text-align: right;
+  flex: 1;
+}
+
+.detail-block {
+  margin-bottom: 16px;
+}
+
+.detail-block:last-child {
+  margin-bottom: 0;
+}
+
+.detail-block .label {
+  display: block;
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.detail-block .value {
+  color: #333;
+  font-size: 14px;
+  line-height: 1.6;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.diagnosis-text {
+  font-weight: 500;
+  color: #00838f;
+}
+
+.attachment-link {
+  color: #00838f;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.attachment-link:hover {
+  color: #00acc1;
+  text-decoration: underline;
+}
+
+.dialog-actions {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-close {
+  padding: 10px 24px;
+  background: #f5f5f5;
+  color: #333;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.btn-close:hover {
+  background: #e0e0e0;
+}

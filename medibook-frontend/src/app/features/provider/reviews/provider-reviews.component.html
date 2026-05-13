@@ -1,0 +1,90 @@
+<div class="reviews-container">
+  <!-- Animated background -->
+  <div class="bg-shape shape-1"></div>
+  <div class="bg-shape shape-2"></div>
+  <div class="bg-shape shape-3"></div>
+
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <!-- Back Button -->
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back</span>
+    </button>
+
+    <div class="hero-content">
+      <div class="hero-icon">
+        <mat-icon>reviews</mat-icon>
+      </div>
+      <div class="hero-text">
+        <h1>Patient Reviews</h1>
+        <p>See what your patients are saying about you</p>
+      </div>
+      <div class="rating-summary">
+        <div class="rating-big">
+          <span class="rating-number">{{ averageRating || '0.0' }}</span>
+          <div class="stars">
+            <mat-icon *ngFor="let s of [1,2,3,4,5]" 
+                      [class.filled]="s <= averageRating"
+                      [class.partial]="s > averageRating && s - 1 < averageRating">
+              {{ s <= averageRating ? 'star' : (s - 1 < averageRating ? 'star_half' : 'star_outline') }}
+            </mat-icon>
+          </div>
+        </div>
+        <span class="total-reviews">{{ totalReviews }} reviews</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-section">
+    <!-- Rating Distribution -->
+    <div class="rating-distribution">
+      <h3>Rating Breakdown</h3>
+      <div class="rating-bar" *ngFor="let count of ratingDistribution; let i = index">
+        <span class="star-label">{{ 5 - i }} star</span>
+        <div class="progress-bar">
+          <div class="progress-fill" [ngStyle]="{'width.%': (count / totalReviews) * 100}"></div>
+        </div>
+        <span class="count">{{ count }}</span>
+      </div>
+    </div>
+
+    <!-- Reviews List -->
+    <div class="reviews-list-container">
+      <h3 class="section-title">Recent Reviews</h3>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading reviews...</p>
+      </div>
+
+      <!-- Reviews -->
+      <div *ngIf="!loading" class="reviews-list">
+        <div *ngFor="let review of reviews; let i = index" class="review-card" [ngStyle]="{'animation-delay': i * 0.1 + 's'}">
+          <div class="review-header">
+            <div class="reviewer-info">
+              <div class="reviewer-avatar">{{ getInitials(review.patientName) }}</div>
+              <div class="reviewer-details">
+                <h4 class="reviewer-name">{{ review.patientName }}</h4>
+                <span class="review-date">{{ review.date | date:'MMM d, y' }}</span>
+              </div>
+            </div>
+            <div class="rating">
+              <mat-icon *ngFor="let star of getStarArray(review.rating)" class="filled">star</mat-icon>
+              <mat-icon *ngFor="let star of getStarArray(5 - review.rating)">star_border</mat-icon>
+            </div>
+          </div>
+          <p class="review-text">{{ review.comment }}</p>
+          <div class="review-footer">
+            <button class="helpful-btn" [class.marked]="review.userMarkedHelpful" (click)="markHelpful(review)">
+              <mat-icon>thumb_up</mat-icon>
+              <span>Helpful ({{ review.helpful }})</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

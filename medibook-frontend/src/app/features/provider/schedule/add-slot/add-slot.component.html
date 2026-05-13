@@ -1,0 +1,43 @@
+<div class="add-slot-container">
+  <div class="header">
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back to Schedule</span>
+    </button>
+    <h1>Add New Slot</h1>
+    <p>Create a new availability slot for patients to book</p>
+  </div>
+
+  <div class="form-card">
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" [(ngModel)]="slot.date" name="date" required class="form-input">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Time</label>
+          <input type="time" [(ngModel)]="slot.startTime" name="startTime" required class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label>End Time</label>
+          <input type="time" [(ngModel)]="slot.endTime" name="endTime" required class="form-input">
+        </div>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" [(ngModel)]="slot.isRecurring" name="isRecurring">
+          <span>Make this a recurring weekly slot</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Slot</button>
+      </div>
+    </form>
+  </div>
+</div>

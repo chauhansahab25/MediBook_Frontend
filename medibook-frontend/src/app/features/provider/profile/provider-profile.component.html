@@ -1,0 +1,170 @@
+<div class="profile-container">
+  <!-- Animated Background -->
+  <div class="bg-shape shape-1"></div>
+  <div class="bg-shape shape-2"></div>
+  <div class="bg-shape shape-3"></div>
+
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <!-- Back Button -->
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back</span>
+    </button>
+
+    <div class="hero-content">
+      <div class="hero-icon">
+        <mat-icon>person</mat-icon>
+      </div>
+      <div class="hero-text">
+        <h1>My Profile</h1>
+        <p>Manage your professional information</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Content -->
+  <div class="content-section">
+    <!-- Profile Card -->
+    <div class="profile-card main-card">
+      <!-- Loading Overlay -->
+      <div *ngIf="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Saving changes...</p>
+      </div>
+
+      <div class="card-header">
+        <div class="avatar-section">
+          <div class="profile-avatar">
+            <span class="avatar-text">{{ getInitials(profile.fullName) }}</span>
+          </div>
+          <button class="change-photo-btn">
+            <mat-icon>camera_alt</mat-icon>
+          </button>
+        </div>
+        <div class="header-info">
+          <h2>{{ profile.fullName || 'Provider Name' }}</h2>
+          <p class="specialization">{{ profile.specialization || 'Specialization' }}</p>
+        </div>
+      </div>
+
+      <form class="profile-form" (ngSubmit)="saveProfile()">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" [(ngModel)]="profile.fullName" name="fullName" class="form-input" placeholder="Enter your full name">
+          </div>
+
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="profile.email" name="email" class="form-input" disabled>
+          </div>
+
+          <div class="form-group">
+            <label>Specialization</label>
+            <input type="text" [(ngModel)]="profile.specialization" name="specialization" class="form-input" placeholder="e.g. Cardiologist">
+          </div>
+
+          <div class="form-group">
+            <label>Qualification</label>
+            <input type="text" [(ngModel)]="profile.qualification" name="qualification" class="form-input" placeholder="e.g. MD, MBBS">
+          </div>
+
+          <div class="form-group">
+            <label>Years of Experience</label>
+            <input type="number" [(ngModel)]="profile.experienceYears" name="experienceYears" class="form-input" placeholder="e.g. 10">
+          </div>
+
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" [(ngModel)]="profile.phone" name="phone" class="form-input" placeholder="Enter phone number">
+          </div>
+
+          <div class="form-group full-width">
+            <label>Bio</label>
+            <textarea [(ngModel)]="profile.bio" name="bio" class="form-input" rows="4" placeholder="Tell us about yourself..."></textarea>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Clinic Name</label>
+            <input type="text" [(ngModel)]="profile.clinicName" name="clinicName" class="form-input" placeholder="Enter clinic name">
+          </div>
+
+          <div class="form-group full-width">
+            <label>Clinic Address</label>
+            <textarea [(ngModel)]="profile.clinicAddress" name="clinicAddress" class="form-input" rows="3" placeholder="Enter clinic address"></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
+          <button type="submit" class="btn-primary">
+            <mat-icon>save</mat-icon>
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Side Cards -->
+    <div class="side-cards">
+      <div class="info-card">
+        <h3>Account Status</h3>
+        <div class="status-badge" [class.verified]="isVerified" [class.pending]="!isVerified">
+          <mat-icon>{{ isVerified ? 'check_circle' : 'pending' }}</mat-icon>
+          <span>{{ isVerified ? 'Verified Provider' : 'Pending Verification' }}</span>
+        </div>
+        <p>{{ isVerified ? 'Your account is fully verified and active.' : 'Your account is pending verification by our admin team.' }}</p>
+      </div>
+
+      <div class="info-card">
+        <h3>Quick Links</h3>
+        <div class="quick-links">
+          <button class="link-btn" (click)="navigateToSchedule()">
+            <mat-icon>schedule</mat-icon>
+            <span>My Schedule</span>
+          </button>
+          <button class="link-btn" (click)="navigateToAppointments()">
+            <mat-icon>event_note</mat-icon>
+            <span>Appointments</span>
+          </button>
+          <button class="link-btn" [class.active]="changingPassword" (click)="togglePasswordChange()">
+            <mat-icon>lock</mat-icon>
+            <span>{{ changingPassword ? 'Cancel Change' : 'Change Password' }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Password Change Card -->
+      <div class="info-card password-card" *ngIf="changingPassword">
+        <div class="card-header-small">
+          <mat-icon>security</mat-icon>
+          <h3>Update Password</h3>
+        </div>
+        
+        <form (ngSubmit)="changePassword()" class="password-form">
+          <div class="form-group-small">
+            <label>Current Password</label>
+            <input type="password" [(ngModel)]="passwordData.currentPassword" name="currentPassword" class="form-input" required>
+          </div>
+          
+          <div class="form-group-small">
+            <label>New Password</label>
+            <input type="password" [(ngModel)]="passwordData.newPassword" name="newPassword" class="form-input" required>
+          </div>
+          
+          <div class="form-group-small">
+            <label>Confirm New Password</label>
+            <input type="password" [(ngModel)]="passwordData.confirmPassword" name="confirmPassword" class="form-input" required>
+          </div>
+          
+          <button type="submit" class="btn-primary full-width" [disabled]="passwordLoading">
+            <mat-icon *ngIf="!passwordLoading">update</mat-icon>
+            <span *ngIf="!passwordLoading">Update Password</span>
+            <div *ngIf="passwordLoading" class="spinner-small"></div>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

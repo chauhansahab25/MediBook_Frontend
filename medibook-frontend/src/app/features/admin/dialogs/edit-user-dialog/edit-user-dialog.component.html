@@ -1,0 +1,57 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>Edit User</h2>
+  <button mat-icon-button (click)="onCancel()" class="close-btn">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="dialog-content">
+  <div *ngIf="error" class="error-message">
+    <mat-icon>error</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+
+  <div class="form-container">
+    <div class="form-field">
+      <label>User ID</label>
+      <input type="text" [value]="user.userId" disabled class="disabled-input">
+    </div>
+
+    <div class="form-field">
+      <label>Full Name *</label>
+      <input type="text" [(ngModel)]="user.fullName" placeholder="Enter full name" [disabled]="loading">
+    </div>
+
+    <div class="form-field">
+      <label>Email *</label>
+      <input type="email" [(ngModel)]="user.email" placeholder="Enter email" [disabled]="loading">
+    </div>
+
+    <div class="form-field">
+      <label>Phone</label>
+      <input type="tel" [(ngModel)]="user.phone" placeholder="Enter phone number" [disabled]="loading">
+    </div>
+
+    <div class="form-field">
+      <label>Role *</label>
+      <select [(ngModel)]="user.role" [disabled]="loading">
+        <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+      </select>
+    </div>
+
+    <div class="form-field checkbox-field">
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="user.isActive" [disabled]="loading">
+        <span>Active User</span>
+      </label>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-actions">
+  <button class="btn-cancel" (click)="onCancel()" [disabled]="loading">Cancel</button>
+  <button class="btn-save" (click)="onSave()" [disabled]="loading || !user.fullName || !user.email">
+    <mat-icon *ngIf="loading" class="spinner">refresh</mat-icon>
+    <span>{{ loading ? 'Saving...' : 'Save Changes' }}</span>
+  </button>
+</mat-dialog-actions>

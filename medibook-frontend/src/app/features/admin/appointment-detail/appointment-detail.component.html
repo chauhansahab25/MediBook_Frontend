@@ -1,0 +1,194 @@
+<div class="appointment-detail-page">
+  <!-- Background Shapes -->
+  <div class="bg-shape shape-1"></div>
+  <div class="bg-shape shape-2"></div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back</span>
+    </button>
+
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>event</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>Appointment Details</h1>
+        <p>View complete appointment information</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="page-content">
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading appointment details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-container" *ngIf="!loading && error">
+      <mat-icon class="error-icon">error_outline</mat-icon>
+      <h3>{{ error }}</h3>
+      <button class="retry-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Go Back
+      </button>
+    </div>
+
+    <!-- Appointment Details Card -->
+    <div class="detail-card" *ngIf="!loading && appointment">
+      <!-- Status Badge -->
+      <div class="status-section">
+        <span class="status-badge" [class]="getStatusClass(appointment.status)">
+          {{ appointment.status || 'Scheduled' }}
+        </span>
+      </div>
+
+      <!-- Main Info Grid -->
+      <div class="info-grid">
+        <!-- Patient Info -->
+        <div class="info-card patient-card">
+          <div class="card-header">
+            <mat-icon>person</mat-icon>
+            <h3>Patient Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Name:</span>
+              <span class="value">{{ appointment.patientName || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Email:</span>
+              <span class="value">{{ appointment.patientEmail || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Patient ID:</span>
+              <span class="value">#{{ appointment.patientId }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Provider Info -->
+        <div class="info-card provider-card">
+          <div class="card-header">
+            <mat-icon>medical_services</mat-icon>
+            <h3>Provider Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Name:</span>
+              <span class="value">{{ appointment.providerName || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Specialization:</span>
+              <span class="value">{{ appointment.specialization || 'N/A' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Provider ID:</span>
+              <span class="value">#{{ appointment.providerId }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Appointment Info -->
+        <div class="info-card appointment-card">
+          <div class="card-header">
+            <mat-icon>schedule</mat-icon>
+            <h3>Appointment Details</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Date:</span>
+              <span class="value">{{ appointment.appointmentDate | date:'fullDate' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Time:</span>
+              <span class="value">{{ appointment.startTime }} - {{ appointment.endTime }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Service:</span>
+              <span class="value">{{ appointment.serviceType || 'General Consultation' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Mode:</span>
+              <span class="value">{{ appointment.modeOfConsultation || 'In-Person' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Info -->
+        <div class="info-card additional-card">
+          <div class="card-header">
+            <mat-icon>info</mat-icon>
+            <h3>Additional Information</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Slot ID:</span>
+              <span class="value">#{{ appointment.slotId }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Created:</span>
+              <span class="value">{{ appointment.createdAt | date:'medium' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Last Updated:</span>
+              <span class="value">{{ appointment.updatedAt | date:'medium' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Info -->
+        <div class="info-card payment-card">
+          <div class="card-header">
+            <mat-icon>payments</mat-icon>
+            <h3>Payment Status</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">Status:</span>
+              <span class="value badge" [class]="'badge-' + (appointment.paymentStatus || 'pending').toLowerCase()">
+                {{ appointment.paymentStatus || 'Pending' }}
+              </span>
+            </div>
+            <div class="info-row" *ngIf="appointment.paymentAmount">
+              <span class="label">Amount:</span>
+              <span class="value amount">₹{{ appointment.paymentAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="info-row" *ngIf="appointment.paymentMode">
+              <span class="label">Method:</span>
+              <span class="value">{{ appointment.paymentMode }}</span>
+            </div>
+            <div class="info-row" *ngIf="appointment.transactionId">
+              <span class="label">Transaction ID:</span>
+              <span class="value txn-id">{{ appointment.transactionId }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Section -->
+      <div class="notes-section" *ngIf="appointment.notes">
+        <div class="section-header">
+          <mat-icon>notes</mat-icon>
+          <h3>Additional Notes</h3>
+        </div>
+        <div class="notes-content">
+          <p>{{ appointment.notes }}</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons" *ngIf="appointment.status !== 'Cancelled' && appointment.status !== 'Completed'">
+        <button class="action-btn cancel-btn" (click)="cancelAppointment()">
+          <mat-icon>cancel</mat-icon>
+          <span>Cancel Appointment</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

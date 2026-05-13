@@ -1,0 +1,145 @@
+.refund-dialog {
+  padding: 24px;
+  max-width: 450px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.refund-icon {
+  font-size: 28px;
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  color: #263238;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.dialog-content {
+  margin-bottom: 24px;
+}
+
+.refund-message {
+  color: #546e7a;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.refund-details {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row.refund-amount {
+  border-top: 2px solid #4caf50;
+  margin-top: 8px;
+  padding-top: 12px;
+  font-weight: 600;
+}
+
+.label {
+  color: #78909c;
+  font-size: 14px;
+}
+
+.amount {
+  font-weight: 500;
+  color: #263238;
+}
+
+.detail-row.refund-amount .amount {
+  color: #4caf50;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.refund-timeline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(33, 150, 243, 0.1);
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+}
+
+.timeline-icon {
+  color: #2196f3;
+  font-size: 20px;
+}
+
+.refund-timeline p {
+  margin: 0;
+  color: #1976d2;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  color: #78909c;
+  border: 1px solid #e0e0e0;
+}
+
+.confirm-btn {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 0 16px;
+}
+
+.confirm-btn:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .refund-dialog {
+    padding: 16px;
+  }
+  
+  .dialog-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .dialog-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .confirm-btn {
+    width: 100%;
+  }
+}

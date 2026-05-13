@@ -1,0 +1,37 @@
+<div class="refund-dialog">
+  <div class="dialog-header">
+    <mat-icon class="refund-icon">currency_exchange</mat-icon>
+    <h2>Refund Confirmation</h2>
+  </div>
+  
+  <div class="dialog-content">
+    <p class="refund-message">
+      Your appointment has been cancelled and a refund will be processed.
+    </p>
+    
+    <div class="refund-details">
+      <div class="detail-row">
+        <span class="label">Original Amount:</span>
+        <span class="amount">₹{{ data.originalAmount | number:'1.2-2' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Platform Charge:</span>
+        <span class="amount">-₹{{ data.platformCharge | number:'1.2-2' }}</span>
+      </div>
+      <div class="detail-row refund-amount">
+        <span class="label">Refund Amount:</span>
+        <span class="amount">₹{{ data.refundAmount | number:'1.2-2' }}</span>
+      </div>
+    </div>
+    
+    <div class="refund-timeline">
+      <mat-icon class="timeline-icon">schedule</mat-icon>
+      <p>Your money will be returned in <strong>2-3 working days</strong></p>
+    </div>
+  </div>
+  
+  <div class="dialog-actions">
+    <button mat-button class="cancel-btn" (click)="onCancel()">Cancel</button>
+    <button mat-raised-button class="confirm-btn" (click)="onConfirm()">Confirm Refund</button>
+  </div>
+</div>

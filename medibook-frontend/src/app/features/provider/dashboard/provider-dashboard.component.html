@@ -1,0 +1,152 @@
+<div class="provider-dashboard">
+  <!-- Animated background shapes -->
+  <div class="floating-shape shape-1"></div>
+  <div class="floating-shape shape-2"></div>
+
+  <!-- Hero Header Section -->
+  <div class="dashboard-hero">
+    <div class="hero-content">
+      <div class="user-avatar">
+        <mat-icon class="avatar-icon">medical_services</mat-icon>
+      </div>
+      <div class="welcome-text">
+        <h1>Welcome back, <span class="user-name">{{ user?.fullName || 'Provider' }}</span>!</h1>
+        <p class="subtitle">Manage your practice and appointments</p>
+      </div>
+      <div class="quick-stats">
+        <div class="stat-item">
+          <mat-icon>calendar_month</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalSlots }}</span>
+            <span class="stat-label">Total</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <mat-icon>event_available</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ availableSlots }}</span>
+            <span class="stat-label">Available</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <mat-icon>event_busy</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ bookedSlots }}</span>
+            <span class="stat-label">Booked</span>
+          </div>
+        </div>
+      </div>
+      <button mat-button class="logout-btn" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Verification Warning -->
+  <div *ngIf="verificationLoaded && !isVerified" class="verification-section">
+    <div class="verification-card">
+      <mat-icon class="warning-icon">warning</mat-icon>
+      <div class="verification-content">
+        <h3>Account Pending Verification</h3>
+        <p>Your provider account is pending verification by our admin team. You will be notified once your account is verified.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Cards -->
+  <div class="dashboard-section">
+    <h2 class="section-title">Your Dashboard</h2>
+    <div class="dashboard-cards">
+      <mat-card class="dashboard-card schedule" (click)="navigateToSchedule()">
+        <div class="card-icon-wrapper">
+          <mat-icon class="card-icon">schedule</mat-icon>
+        </div>
+        <mat-card-header>
+          <mat-card-title>My Schedule</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Manage your availability slots and set your working hours.</p>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary">Manage</button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card class="dashboard-card appointments" (click)="navigateToAppointments()">
+        <div class="card-icon-wrapper">
+          <mat-icon class="card-icon">event_note</mat-icon>
+        </div>
+        <mat-card-header>
+          <mat-card-title>Appointments</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>View and manage your upcoming patient appointments.</p>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary">View All</button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card class="dashboard-card profile" (click)="navigateToProfile()">
+        <div class="card-icon-wrapper">
+          <mat-icon class="card-icon">person</mat-icon>
+        </div>
+        <mat-card-header>
+          <mat-card-title>My Profile</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Update your profile information, qualifications and specialties.</p>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary">Edit</button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card class="dashboard-card reviews" (click)="navigateToReviews()">
+        <div class="card-icon-wrapper">
+          <mat-icon class="card-icon">reviews</mat-icon>
+        </div>
+        <mat-card-header>
+          <mat-card-title>Patient Reviews</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Read feedback and ratings from your patients.</p>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary">Read</button>
+        </mat-card-actions>
+      </mat-card>
+
+      <mat-card class="dashboard-card earnings" (click)="navigateToEarnings()">
+        <div class="card-icon-wrapper">
+          <mat-icon class="card-icon">payments</mat-icon>
+        </div>
+        <mat-card-header>
+          <mat-card-title>My Earnings</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>View your complete earnings history and payment details.</p>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button color="primary">View</button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Recent Activity Section -->
+  <div class="activity-section">
+    <h2 class="section-title">Recent Activity</h2>
+    <div class="activity-grid" *ngIf="recentActivities.length > 0; else noActivity">
+      <div class="activity-card" *ngFor="let act of recentActivities">
+        <mat-icon class="activity-icon" [ngClass]="act.iconClass">{{ act.icon }}</mat-icon>
+        <p [innerHTML]="act.title"></p>
+        <span class="activity-time">{{ act.timeAgo }}</span>
+      </div>
+    </div>
+    <ng-template #noActivity>
+      <p class="text-muted" style="text-align: center; padding: 24px; background: white; border-radius: 12px; font-weight: 500; color: #64748b;">No recent activity found.</p>
+    </ng-template>
+  </div>
+</div>

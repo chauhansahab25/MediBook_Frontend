@@ -1,0 +1,65 @@
+<div class="recurring-slots-container">
+  <div class="header">
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back to Schedule</span>
+    </button>
+    <h1>Recurring Slots</h1>
+    <p>Set up weekly repeating availability</p>
+  </div>
+
+  <div class="form-card">
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Time</label>
+          <input type="time" [(ngModel)]="recurringSlot.startTime" name="startTime" required class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label>End Time</label>
+          <input type="time" [(ngModel)]="recurringSlot.endTime" name="endTime" required class="form-input">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Select Days</label>
+        <div class="days-grid">
+          <label class="day-checkbox" [class.selected]="recurringSlot.days.monday">
+            <input type="checkbox" [(ngModel)]="recurringSlot.days.monday" name="monday">
+            <span class="day-label">Mon</span>
+          </label>
+          <label class="day-checkbox" [class.selected]="recurringSlot.days.tuesday">
+            <input type="checkbox" [(ngModel)]="recurringSlot.days.tuesday" name="tuesday">
+            <span class="day-label">Tue</span>
+          </label>
+          <label class="day-checkbox" [class.selected]="recurringSlot.days.wednesday">
+            <input type="checkbox" [(ngModel)]="recurringSlot.days.wednesday" name="wednesday">
+            <span class="day-label">Wed</span>
+          </label>
+          <label class="day-checkbox" [class.selected]="recurringSlot.days.thursday">
+            <input type="checkbox" [(ngModel)]="recurringSlot.days.thursday" name="thursday">
+            <span class="day-label">Thu</span>
+          </label>
+          <label class="day-checkbox" [class.selected]="recurringSlot.days.friday">
+            <input type="checkbox" [(ngModel)]="recurringSlot.days.friday" name="friday">
+            <span class="day-label">Fri</span>
+          </label>
+          <label class="day-checkbox" [class.selected]="recurringSlot.days.saturday">
+            <input type="checkbox" [(ngModel)]="recurringSlot.days.saturday" name="saturday">
+            <span class="day-label">Sat</span>
+          </label>
+          <label class="day-checkbox" [class.selected]="recurringSlot.days.sunday">
+            <input type="checkbox" [(ngModel)]="recurringSlot.days.sunday" name="sunday">
+            <span class="day-label">Sun</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn-secondary" (click)="goBack()">Cancel</button>
+        <button type="submit" class="btn-primary">Create Recurring Slots</button>
+      </div>
+    </form>
+  </div>
+</div>

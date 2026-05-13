@@ -1,0 +1,110 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>Medical Record Details</h2>
+  <button mat-icon-button (click)="onClose()" class="close-btn">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content class="dialog-content">
+  <div class="record-details">
+    <!-- Patient Information -->
+    <div class="detail-section">
+      <div class="section-header">
+        <mat-icon>person</mat-icon>
+        <h3>Patient Information</h3>
+      </div>
+      <div class="detail-row">
+        <span class="label">Name:</span>
+        <span class="value">{{ getPatientName() }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Patient ID:</span>
+        <span class="value">#{{ record.patientId }}</span>
+      </div>
+    </div>
+
+    <!-- Provider Information -->
+    <div class="detail-section">
+      <div class="section-header">
+        <mat-icon>medical_services</mat-icon>
+        <h3>Provider Information</h3>
+      </div>
+      <div class="detail-row">
+        <span class="label">Name:</span>
+        <span class="value">{{ getProviderName() }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Provider ID:</span>
+        <span class="value">#{{ record.providerId }}</span>
+      </div>
+    </div>
+
+    <!-- Record Information -->
+    <div class="detail-section">
+      <div class="section-header">
+        <mat-icon>folder_open</mat-icon>
+        <h3>Record Information</h3>
+      </div>
+      <div class="detail-row">
+        <span class="label">Record ID:</span>
+        <span class="value">#{{ record.recordId }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Appointment ID:</span>
+        <span class="value">#{{ record.appointmentId }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Record Type:</span>
+        <span class="value">{{ record.recordType || 'Consultation' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Created Date:</span>
+        <span class="value">{{ formatDate(record.createdAt) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Last Updated:</span>
+        <span class="value">{{ formatDate(record.updatedAt) }}</span>
+      </div>
+    </div>
+
+    <!-- Medical Details -->
+    <div class="detail-section">
+      <div class="section-header">
+        <mat-icon>assignment</mat-icon>
+        <h3>Medical Details</h3>
+      </div>
+      <div class="detail-block">
+        <span class="label">Diagnosis:</span>
+        <p class="value diagnosis-text">{{ record.diagnosis || 'N/A' }}</p>
+      </div>
+      <div class="detail-block" *ngIf="record.prescription">
+        <span class="label">Prescription:</span>
+        <p class="value">{{ record.prescription }}</p>
+      </div>
+      <div class="detail-block" *ngIf="record.notes">
+        <span class="label">Notes:</span>
+        <p class="value">{{ record.notes }}</p>
+      </div>
+      <div class="detail-row" *ngIf="record.followUpDate">
+        <span class="label">Follow-up Date:</span>
+        <span class="value">{{ formatDate(record.followUpDate) }}</span>
+      </div>
+    </div>
+
+    <!-- Attachment -->
+    <div class="detail-section" *ngIf="record.attachmentUrl">
+      <div class="section-header">
+        <mat-icon>attach_file</mat-icon>
+        <h3>Attachment</h3>
+      </div>
+      <div class="detail-row">
+        <span class="label">Document URL:</span>
+        <a [href]="record.attachmentUrl" target="_blank" class="attachment-link">View Document</a>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-actions">
+  <button class="btn-close" (click)="onClose()">Close</button>
+</mat-dialog-actions>

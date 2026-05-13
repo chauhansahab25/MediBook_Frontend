@@ -1,0 +1,83 @@
+<div class="reviews">
+  <!-- Animated background shapes -->
+  <div class="floating-shape shape-1"></div>
+  <div class="floating-shape shape-2"></div>
+
+  <!-- Header Section -->
+  <div class="reviews-header">
+    <div class="header-content">
+      <button mat-button class="back-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-icon">
+        <mat-icon>rate_review</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>My Reviews</h1>
+        <p>Rate and manage your healthcare provider reviews</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading reviews...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && reviews.length === 0" class="empty-state">
+    <div class="empty-icon">
+      <mat-icon>rate_review</mat-icon>
+    </div>
+    <h3>No reviews yet</h3>
+    <p>You haven't reviewed any providers yet. Book an appointment and share your experience!</p>
+  </div>
+
+  <!-- Reviews List -->
+  <div *ngIf="!loading && reviews.length > 0" class="reviews-list">
+    <div class="results-info">
+      <span class="results-count">{{ reviews.length }} review{{ reviews.length !== 1 ? 's' : '' }}</span>
+    </div>
+    <mat-card *ngFor="let review of reviews" class="review-card">
+      <div class="card-header">
+        <div class="provider-avatar">
+          <mat-icon>person</mat-icon>
+        </div>
+        <div class="review-info">
+          <h3 class="provider-name">{{ review.provider }}</h3>
+          <p class="specialization">{{ review.specialization }}</p>
+        </div>
+        <div class="rating-badge">
+          <mat-icon class="star-icon">star</mat-icon>
+          <span>{{ review.rating }}/5</span>
+        </div>
+      </div>
+      <mat-card-content>
+        <div class="stars-row">
+          <mat-icon *ngFor="let s of [1,2,3,4,5]" 
+                    [class.filled-star]="s <= review.rating"
+                    [class.empty-star]="s > review.rating">
+            {{ s <= review.rating ? 'star' : 'star_outline' }}
+          </mat-icon>
+        </div>
+        <div class="review-clinic">
+          <mat-icon>local_hospital</mat-icon>
+          <span>{{ review.clinic }}</span>
+        </div>
+        <p class="review-comment">"{{ review.comment }}"</p>
+        <p class="review-date">Reviewed on {{ review.date }}</p>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button class="action-btn primary" (click)="editReview(review)">
+          <mat-icon>edit</mat-icon>
+          <span>Edit</span>
+        </button>
+        <button mat-button class="action-btn danger" (click)="deleteReview(review)">
+          <mat-icon>delete</mat-icon>
+          <span>Delete</span>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

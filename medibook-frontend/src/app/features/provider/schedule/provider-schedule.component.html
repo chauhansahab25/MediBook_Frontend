@@ -1,0 +1,304 @@
+<div class="provider-schedule">
+  <!-- Animated background shapes -->
+  <div class="floating-shape shape-1"></div>
+  <div class="floating-shape shape-2"></div>
+  <div class="floating-shape shape-3"></div>
+  <div class="particle particle-1"></div>
+  <div class="particle particle-2"></div>
+  <div class="particle particle-3"></div>
+
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <!-- Back Button -->
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back</span>
+    </button>
+
+    <div class="hero-content">
+      <div class="hero-icon">
+        <mat-icon>schedule</mat-icon>
+      </div>
+      <div class="hero-text">
+        <h1>{{ greeting }}, {{ userName }}</h1>
+        <p>Manage your appointments and availability slots</p>
+      </div>
+      <div class="quick-stats">
+        <div class="stat-item">
+          <mat-icon>calendar_month</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ slots.length }}</span>
+            <span class="stat-label">Total</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <mat-icon>event_available</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ availableSlots }}</span>
+            <span class="stat-label">Available</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <mat-icon>event_busy</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ bookedSlots }}</span>
+            <span class="stat-label">Booked</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions Bar -->
+  <div class="action-section">
+    <div class="action-group">
+      <button class="action-pill primary" (click)="addNewSlot()">
+        <mat-icon>add</mat-icon>
+        <span>New Slot</span>
+      </button>
+      <button class="action-pill secondary" (click)="addRecurringSlots()">
+        <mat-icon>repeat</mat-icon>
+        <span>Recurring</span>
+      </button>
+      <button class="action-pill secondary" (click)="viewCalendar()">
+        <mat-icon>calendar_today</mat-icon>
+        <span>Calendar</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Today's Timeline -->
+  <div class="today-summary" *ngIf="!loading && todaySlots.length > 0">
+    <div class="timeline-card">
+      <div class="timeline-header">
+        <div class="timeline-title">
+          <mat-icon>schedule</mat-icon>
+          <span>Today's Schedule</span>
+        </div>
+        <span class="timeline-count">{{ todaySlots.length }} slots</span>
+      </div>
+      <div class="timeline-body">
+        <div class="timeline-track">
+          <div class="timeline-slot" *ngFor="let slot of todaySlots" [class.booked]="slot.isBooked">
+            <div class="timeline-dot"></div>
+            <div class="timeline-info">
+              <span class="timeline-time">{{ slot.startTime }}</span>
+              <span class="timeline-label" *ngIf="slot.isBooked">{{ slot.patientName }}</span>
+              <span class="timeline-label available" *ngIf="!slot.isBooked">Available</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weekly Overview -->
+  <div class="weekly-section" *ngIf="!loading">
+    <div class="section-header">
+      <h2 class="section-title">
+        <mat-icon>date_range</mat-icon>
+        This Week
+      </h2>
+      <span class="section-date">{{ weekRange }}</span>
+    </div>
+    <div class="week-grid">
+      <div class="day-card" *ngFor="let day of weekDays; let i = index"
+           [class.has-slots]="day.slots > 0"
+           [class.today]="day.isToday"
+           [class.selected]="selectedDate === day.fullDate"
+           (click)="selectDate(day)"
+           [style.animation-delay]="i * 0.08 + 's'">
+        <div class="day-accent" *ngIf="day.isToday"></div>
+        <div class="day-accent green" *ngIf="day.slots > 0 && !day.isToday"></div>
+        <div class="day-top">
+          <span class="day-name">{{ day.name }}</span>
+          <span class="day-count" *ngIf="day.slots > 0">{{ day.slots }}</span>
+        </div>
+        <span class="day-date">{{ day.date }}</span>
+        <div class="day-bottom">
+          <span class="day-status booked" *ngIf="day.slots > 0">
+            <mat-icon>event_available</mat-icon>
+            slots
+          </span>
+          <span class="day-status empty" *ngIf="day.slots === 0">
+            <mat-icon>event_busy</mat-icon>
+            off
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected Date Details -->
+  <div class="date-details-section" *ngIf="showDateDetails">
+    <div class="date-details-header">
+      <div class="date-details-title">
+        <button class="back-btn-small" (click)="closeDateDetails()">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        <h3>{{ getSelectedDateDisplay() }}</h3>
+      </div>
+      <div class="date-details-stats">
+        <div class="stat-chip">
+          <mat-icon>event_available</mat-icon>
+          <span>{{ selectedDateAvailableCount }} Available</span>
+        </div>
+        <div class="stat-chip">
+          <mat-icon>event_busy</mat-icon>
+          <span>{{ selectedDateBookedCount }} Booked</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="date-details-content" *ngIf="selectedDateSlots.length > 0">
+      <div class="slots-timeline">
+        <div class="timeline-slot" *ngFor="let slot of selectedDateSlots; let i = index" 
+             [class.booked]="slot.isBooked"
+             [style.animation-delay]="i * 0.05 + 's'">
+          <div class="slot-time">
+            <span class="time-start">{{ slot.startTime }}</span>
+            <span class="time-end">{{ slot.endTime }}</span>
+          </div>
+          <div class="slot-content">
+            <div class="slot-status" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked">
+              <mat-icon>{{ slot.isBooked ? 'person' : 'radio_button_checked' }}</mat-icon>
+              <span>{{ slot.isBooked ? 'Booked' : 'Available' }}</span>
+            </div>
+            <div class="slot-patient" *ngIf="slot.isBooked && slot.patientName">
+              <div class="patient-info">
+                <span class="patient-name">{{ slot.patientName }}</span>
+                <span class="patient-id">ID: {{ slot.slotId }}</span>
+              </div>
+              <button class="view-btn" (click)="viewBooking(slot)">
+                <mat-icon>visibility</mat-icon>
+                View
+              </button>
+              <button class="delete-btn-small" (click)="deleteSlot(slot)">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+            <div class="slot-actions" *ngIf="!slot.isBooked">
+              <button class="edit-btn" (click)="editSlot(slot)">
+                <mat-icon>edit</mat-icon>
+                Edit
+              </button>
+              <button class="delete-btn" (click)="deleteSlot(slot)">
+                <mat-icon>delete_outline</mat-icon>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="empty-date-state" *ngIf="selectedDateSlots.length === 0">
+      <div class="empty-icon">
+        <mat-icon>event_busy</mat-icon>
+      </div>
+      <h4>No Appointments</h4>
+      <p>No appointments scheduled for this date.</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner"></div>
+    <p>Loading your schedule...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && slots.length === 0" class="empty-state">
+    <div class="empty-icon">
+      <mat-icon>event_busy</mat-icon>
+    </div>
+    <h3>No Availability Slots</h3>
+    <p>Add slots to start accepting appointments from patients.</p>
+    <button class="action-pill primary" (click)="router.navigate(['/provider/add-slot'])">
+      <mat-icon>add</mat-icon>
+      Add Your First Slot
+    </button>
+  </div>
+
+  <!-- Slots Grid -->
+  <div *ngIf="!loading && slots.length > 0" class="slots-section">
+    <div class="section-header">
+      <h2 class="section-title">Upcoming Slots</h2>
+      <div class="filter-tabs">
+        <button class="filter-tab" [class.active]="filter === 'all'" (click)="setFilter('all')">All</button>
+        <button class="filter-tab" [class.active]="filter === 'available'" (click)="setFilter('available')">Available</button>
+        <button class="filter-tab" [class.active]="filter === 'booked'" (click)="setFilter('booked')">Booked</button>
+      </div>
+    </div>
+    <div class="slots-grid">
+      <div *ngFor="let slot of filteredSlots; let i = index"
+           class="appointment-card"
+           [class.booked]="slot.isBooked"
+           [style.animation-delay]="i * 0.08 + 's'">
+        <div class="card-stripe" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="card-date-block">
+              <span class="card-day">{{ slot.date | date:'EEE' }}</span>
+              <span class="card-day-num">{{ slot.date | date:'d' }}</span>
+              <span class="card-month">{{ slot.date | date:'MMM' }}</span>
+            </div>
+            <div class="card-time-block">
+              <div class="time-row">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ slot.startTime }} - {{ slot.endTime }}</span>
+              </div>
+              <div class="duration-row">
+                <mat-icon>timer</mat-icon>
+                <span>{{ getDuration(slot) }} minutes</span>
+              </div>
+            </div>
+            <div class="card-status-block">
+              <span class="status-pill" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked">
+                <mat-icon>{{ slot.isBooked ? 'person' : 'radio_button_checked' }}</mat-icon>
+                {{ slot.isBooked ? 'Booked' : 'Open' }}
+              </span>
+              <span class="type-pill" [class.morning]="isMorning(slot)" [class.afternoon]="isAfternoon(slot)" [class.evening]="isEvening(slot)">
+                <mat-icon>{{ isMorning(slot) ? 'wb_sunny' : (isAfternoon(slot) ? 'brightness_5' : 'brightness_2') }}</mat-icon>
+                {{ isMorning(slot) ? 'Morning' : (isAfternoon(slot) ? 'Afternoon' : 'Evening') }}
+              </span>
+            </div>
+          </div>
+          <div class="card-divider"></div>
+          <div class="card-patient" *ngIf="slot.isBooked && slot.patientName">
+            <div class="patient-avatar">{{ getInitials(slot.patientName) }}</div>
+            <div class="patient-details">
+              <span class="patient-name">{{ slot.patientName }}</span>
+              <span class="patient-meta">Patient ID {{ slot.slotId }}</span>
+            </div>
+            <div class="patient-actions">
+              <button class="icon-btn" (click)="viewBooking(slot)" title="View Details">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </div>
+          </div>
+          <div class="card-actions" *ngIf="!slot.isBooked">
+            <button class="action-link edit" (click)="editSlot(slot)">
+              <mat-icon>edit</mat-icon>
+              Edit Time
+            </button>
+            <button class="action-link delete" (click)="deleteSlot(slot)">
+              <mat-icon>delete_outline</mat-icon>
+              Remove
+            </button>
+          </div>
+          <div class="card-actions" *ngIf="slot.isBooked">
+            <button class="action-link primary" (click)="viewBooking(slot)">
+              <mat-icon>visibility</mat-icon>
+              View Appointment
+            </button>
+            <button class="action-link delete" (click)="deleteSlot(slot)">
+              <mat-icon>delete_outline</mat-icon>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

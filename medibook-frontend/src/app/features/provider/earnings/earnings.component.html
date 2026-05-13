@@ -1,0 +1,132 @@
+<div class="earnings">
+  <!-- Hero Section with Green/Gold Theme -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <button mat-button type="button" class="back-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="hero-icon">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="hero-text">
+        <h1>My Earnings</h1>
+        <p>View your complete earnings history and payment details</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Earnings Summary Cards -->
+  <div class="summary-section">
+    <div class="summary-header">
+      <div class="summary-info">
+        <h2>Earnings Overview</h2>
+      </div>
+    </div>
+    <div class="summary-cards">
+      <mat-card class="summary-card total-earnings">
+        <div class="summary-icon">
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <div class="summary-content">
+          <h3>Total Earnings</h3>
+          <p class="summary-value total-earnings-amount">₹1,500.00</p>
+        </div>
+      </mat-card>
+
+      <mat-card class="summary-card today-earnings">
+        <div class="summary-icon">
+          <mat-icon>today</mat-icon>
+        </div>
+        <div class="summary-content">
+          <h3>Today's Income</h3>
+          <p class="summary-value today-amount">₹1,000.00</p>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+
+
+  <!-- Earnings List -->
+  <div class="earnings-section">
+    <div class="section-header">
+      <div class="section-info">
+        <h2>Earnings History</h2>
+        <p class="section-subtitle">Detailed breakdown of all your earnings</p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading earnings data...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="error-state">
+      <mat-icon class="error-icon">error</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-raised-button color="primary" (click)="loadEarnings()">Retry</button>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && earnings.length === 0" class="empty-state">
+      <mat-icon class="empty-icon">receipt_long</mat-icon>
+      <h3>No earnings found</h3>
+      <p>You haven't completed any appointments yet.</p>
+    </div>
+
+    <!-- Earnings List -->
+    <div *ngIf="!loading && !error && earnings.length > 0" class="earnings-list">
+      <mat-card class="earning-card" *ngFor="let earning of earnings" [class.recent-earning]="earning.isRecentEarning" [class.today-earning]="earning.isTodayEarning">
+        <div class="earning-header">
+          <div class="earning-info">
+            <div class="patient-info">
+              <h4>{{ earning.patientName }}</h4>
+              <div class="earning-meta">
+                <span class="earning-time">{{ earning.timeAgo }}</span>
+                <span class="today-badge" *ngIf="earning.isTodayEarning">Today</span>
+                <span class="earning-status-badge" *ngIf="earning.earningStatus">{{ earning.earningStatus }}</span>
+              </div>
+            </div>
+            <p class="earning-date">{{ formatDate(earning.paymentDate) }}</p>
+          </div>
+          <div class="earning-status">
+            <mat-icon [class]="getStatusClass(earning.status)">{{ getStatusIcon(earning.status) }}</mat-icon>
+            <span [class]="getStatusClass(earning.status)">{{ earning.status }}</span>
+          </div>
+        </div>
+
+        <div class="earning-details">
+          <div class="detail-row">
+            <span class="detail-label">Provider Income:</span>
+            <span class="detail-value income-amount">{{ formatAmount(earning.bookingEarning || 500) }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Payment Method:</span>
+            <span class="detail-value">{{ earning.paymentMethod }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Transaction ID:</span>
+            <span class="detail-value">{{ earning.transactionId }}</span>
+          </div>
+          <div class="detail-row" *ngIf="earning.appointmentId">
+            <span class="detail-label">Appointment ID:</span>
+            <span class="detail-value">{{ earning.appointmentId }}</span>
+          </div>
+          <div class="detail-row" *ngIf="earning.patientId">
+            <span class="detail-label">Patient ID:</span>
+            <span class="detail-value">{{ earning.patientId }}</span>
+          </div>
+          <div class="detail-row" *ngIf="earning.providerId">
+            <span class="detail-label">Provider ID:</span>
+            <span class="detail-value">{{ earning.providerId }}</span>
+          </div>
+          <div class="detail-row" *ngIf="earning.amount">
+            <span class="detail-label">Payment Amount:</span>
+            <span class="detail-value">{{ formatAmount(earning.amount) }}</span>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+</div>
