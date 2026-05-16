@@ -59,16 +59,6 @@
 
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon>medication</mat-icon>
-          <span>Prescriptions</span>
-        </ng-template>
-        <div class="tab-content">
-          <ng-container *ngTemplateOutlet="recordsList; context: { records: getPrescriptionRecords() }"></ng-container>
-        </div>
-      </mat-tab>
-
-      <mat-tab>
-        <ng-template mat-tab-label>
           <mat-icon>science</mat-icon>
           <span>Lab Reports</span>
         </ng-template>
@@ -79,11 +69,21 @@
 
       <mat-tab>
         <ng-template mat-tab-label>
-          <mat-icon>more_horiz</mat-icon>
-          <span>Others</span>
+          <mat-icon>vaccines</mat-icon>
+          <span>Vaccinations</span>
         </ng-template>
         <div class="tab-content">
-          <ng-container *ngTemplateOutlet="recordsList; context: { records: getOtherRecords() }"></ng-container>
+          <ng-container *ngTemplateOutlet="recordsList; context: { records: getVaccinationRecords() }"></ng-container>
+        </div>
+      </mat-tab>
+
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>history_edu</mat-icon>
+          <span>Surgeries</span>
+        </ng-template>
+        <div class="tab-content">
+          <ng-container *ngTemplateOutlet="recordsList; context: { records: getSurgeryRecords() }"></ng-container>
         </div>
       </mat-tab>
     </mat-tab-group>
@@ -124,6 +124,14 @@
           <div class="record-section" *ngIf="record.followUpDate">
             <strong>Follow Up:</strong>
             <p>{{ record.followUpDate | date:'mediumDate' }}</p>
+          </div>
+          <div class="attachment-info" *ngIf="record.documentUrl">
+            <mat-icon>attachment</mat-icon>
+            <span>File Attached</span>
+            <button mat-button class="view-btn" (click)="downloadRecord(record)">
+              <mat-icon>open_in_new</mat-icon>
+              View
+            </button>
           </div>
         </mat-card-content>
         <mat-card-actions>

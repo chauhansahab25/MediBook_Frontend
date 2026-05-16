@@ -67,23 +67,28 @@ export class ProviderProfileComponent implements OnInit {
       if (userId) {
         this.providerService.getProviderByUserId(userId).subscribe({
           next: (userProfile: any) => {
-            // Merge API data with current profile
-            this.profile = {
-              ...this.profile,
-              fullName: userProfile.fullName || this.profile.fullName,
-              email: userProfile.email || this.profile.email,
-              phone: userProfile.phone || this.profile.phone,
-              // Provider-specific fields from API
-              specialization: userProfile.specialization || '',
-              qualification: userProfile.qualification || '',
-              experienceYears: userProfile.experienceYears || null,
-              bio: userProfile.bio || '',
-              clinicName: userProfile.clinicName || '',
-              clinicAddress: userProfile.clinicAddress || ''
-            };
-            
-            // Capture verification status
-            this.isVerified = userProfile.isVerified || false;
+            if (userProfile) {
+              // Merge API data with current profile
+              this.profile = {
+                ...this.profile,
+                fullName: userProfile.fullName || this.profile.fullName,
+                email: userProfile.email || this.profile.email,
+                phone: userProfile.phone || this.profile.phone,
+                // Provider-specific fields from API
+                specialization: userProfile.specialization || '',
+                qualification: userProfile.qualification || '',
+                experienceYears: userProfile.experienceYears || null,
+                bio: userProfile.bio || '',
+                clinicName: userProfile.clinicName || '',
+                clinicAddress: userProfile.clinicAddress || ''
+              };
+              
+              // Capture verification status
+              this.isVerified = userProfile.isVerified || false;
+            } else {
+              // Default to unverified for new profiles
+              this.isVerified = false;
+            }
 
             // Also cache in localStorage for offline access
             localStorage.setItem('providerProfile', JSON.stringify({
@@ -145,29 +150,49 @@ export class ProviderProfileComponent implements OnInit {
     if (userId) {
       this.providerService.getProviderByUserId(userId).subscribe({
         next: (existingProfile: any) => {
-          // Update existing provider profile
-          const updateData = {
-            ...existingProfile,
-            ...profileData
-          };
+          if (existingProfile) {
+            // Update existing provider profile
+            const updateData = {
+              ...existingProfile,
+              ...profileData
+            };
 
-          // Use update endpoint from ProviderService
-          this.providerService.updateProvider(existingProfile.providerId, updateData).subscribe({
-            next: (updatedProfile) => {
-              // Also save to localStorage as backup/cache
-              localStorage.setItem('providerProfile', JSON.stringify(profileData));
-              alert('Profile saved successfully!');
-              this.loading = false;
-              console.log('Profile updated:', updatedProfile);
-            },
-            error: (err: any) => {
-              console.error('Failed to update profile:', err);
-              this.loading = false;
-            }
-          });
+            this.providerService.updateProvider(existingProfile.providerId, updateData).subscribe({
+              next: (updatedProfile) => {
+                localStorage.setItem('providerProfile', JSON.stringify(profileData));
+                alert('Profile updated successfully!');
+                this.loading = false;
+              },
+              error: (err: any) => {
+                console.error('Failed to update profile:', err);
+                alert('Failed to update profile. Please try again.');
+                this.loading = false;
+              }
+            });
+          } else {
+            // Create NEW provider profile
+            const newProfileData = {
+              userId: userId,
+              ...profileData
+            };
+            
+            this.providerService.createProvider(newProfileData).subscribe({
+              next: (createdProfile) => {
+                localStorage.setItem('providerProfile', JSON.stringify(profileData));
+                alert('Profile created successfully! Your account is now pending admin verification.');
+                this.loading = false;
+              },
+              error: (err: any) => {
+                console.error('Failed to create profile:', err);
+                alert('Failed to create profile. Please check your data and try again.');
+                this.loading = false;
+              }
+            });
+          }
         },
         error: (err: any) => {
-          console.error('Failed to load profile for update:', err);
+          console.error('Failed to check existing profile:', err);
+          alert('Network error. Failed to save profile.');
           this.loading = false;
         }
       });

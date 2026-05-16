@@ -24,7 +24,7 @@
     <div class="search-bar-container">
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Search by name or specialization</mat-label>
-        <input matInput [(ngModel)]="searchTerm" (keyup.enter)="search()" placeholder="e.g., Cardiology, Dr. Smith">
+        <input matInput [(ngModel)]="searchTerm" (keyup.enter)="search()" placeholder="e.g., Cardiology, Surgery">
         <mat-icon matPrefix>search</mat-icon>
       </mat-form-field>
       <button mat-raised-button class="search-btn" (click)="search()">
@@ -40,6 +40,7 @@
       <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'dermatology'" (click)="setFilter('dermatology')">Dermatology</button>
       <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'general'" (click)="setFilter('general')">General Medicine</button>
       <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'pediatrics'" (click)="setFilter('pediatrics')">Pediatrics</button>
+      <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'gynecology'" (click)="setFilter('gynecology')">Gynecologist</button>
     </div>
   </div>
 

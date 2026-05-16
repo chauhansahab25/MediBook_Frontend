@@ -38,4 +38,12 @@ export class ReviewService {
   getReviewsByPatient(patientId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/reviews/patient/${patientId}`);
   }
+
+  getReviewCount(providerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/reviews/provider/${providerId}/count`);
+  }
+
+  getAverageRating(providerId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/reviews/provider/${providerId}/avgrating`);
+  }
 }

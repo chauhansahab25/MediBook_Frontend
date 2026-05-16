@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AppointmentService } from '../../../core/services/appointment.service';
+import { UserService } from '../../../core/services/user.service';
+import { ProviderService } from '../../../core/services/provider.service';
+import { PaymentService } from '../../../core/services/payment.service';
 
 @Component({
   selector: 'app-appointment-detail',
@@ -15,7 +19,10 @@ export class AppointmentDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private appointmentService: AppointmentService
+    private appointmentService: AppointmentService,
+    private userService: UserService,
+    private providerService: ProviderService,
+    private paymentService: PaymentService
   ) {}
 
   ngOnInit(): void {
@@ -32,17 +39,48 @@ export class AppointmentDetailComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.appointmentService.getAppointmentById(id).subscribe({
-      next: (appointment) => {
-        this.appointment = appointment;
+    firstValueFrom(this.appointmentService.getAppointmentById(id))
+      .then(async (appointment) => {
+        if (!appointment) {
+          throw new Error('Appointment not found');
+        }
+
+        try {
+          // Enrich data in parallel
+          const [patientUser, providerProfile, payment] = await Promise.all([
+            firstValueFrom(this.userService.getUserById(appointment.patientId)).catch(() => null),
+            firstValueFrom(this.providerService.getProviderById(appointment.providerId)).catch(() => null),
+            firstValueFrom(this.paymentService.getPaymentByAppointment(id)).catch(() => null)
+          ]);
+
+          let providerUser = null;
+          if (providerProfile) {
+            providerUser = await firstValueFrom(this.userService.getUserById(providerProfile.userId)).catch(() => null);
+          }
+
+          this.appointment = {
+            ...appointment,
+            patientName: patientUser?.fullName || appointment.patientName || `Patient #${appointment.patientId}`,
+            patientEmail: patientUser?.email || 'N/A',
+            providerName: providerUser?.fullName || appointment.providerName || `Provider #${appointment.providerId}`,
+            providerEmail: providerUser?.email || 'N/A',
+            specialization: providerProfile?.specialization || appointment.specialization || 'N/A',
+            paymentStatus: payment?.status || appointment.paymentStatus || 'Pending',
+            paymentAmount: payment?.amount || appointment.paymentAmount || 0,
+            transactionId: payment?.transactionId || appointment.transactionId || 'N/A'
+          };
+        } catch (mergeError) {
+          console.warn('Failed to fully enrich appointment data:', mergeError);
+          this.appointment = appointment; // Fallback to raw data
+        }
+
         this.loading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load appointment details';
+      })
+      .catch((err) => {
+        this.error = 'Failed to load appointment details: ' + (err.message || 'Unknown error');
         this.loading = false;
         console.error('Error loading appointment:', err);
-      }
-    });
+      });
   }
 
   goBack(): void {

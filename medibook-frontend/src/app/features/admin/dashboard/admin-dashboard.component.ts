@@ -81,37 +81,56 @@ export class AdminDashboardComponent implements OnInit {
     console.log('Provider URL:', environment.providerUrl);
     console.log('Appointment URL:', environment.appointmentUrl);
 
-    // Load real users from API
-    this.http.get<any[]>(`${environment.authUrl}/auth/users`).subscribe({
-      next: (users) => {
-        console.log('Users loaded:', users);
-        this.totalUsers = users.length;
-        this.activeUsers = users.filter((u: any) => u.isActive).length;
-        this.usersTrend = this.activeUsers; // Use active users as trend for now
-        this.usersTrendIcon = 'trending_up';
-        this.usersTrendText = `+${this.activeUsers} active`;
-      },
-      error: (err) => {
-        console.error('Failed to load users:', err);
-        this.totalUsers = 0;
-        this.activeUsers = 0;
-      }
-    });
+    // Load real users and providers together for accurate provider stats
+    Promise.all([
+      this.http.get<any[]>(`${environment.authUrl}/auth/users`).toPromise().catch(() => []),
+      this.http.get<any[]>(`${environment.providerUrl}/providers`).toPromise().catch(() => [])
+    ]).then(([users, providers]) => {
+      // 1. Calculate User Stats
+      console.log('Users loaded:', users);
+      this.totalUsers = (users || []).length;
+      this.activeUsers = (users || []).filter((u: any) => u.isActive).length;
+      this.usersTrend = this.activeUsers;
+      this.usersTrendIcon = 'trending_up';
+      this.usersTrendText = `+${this.activeUsers} active`;
 
-    // Load real providers from API
-    this.http.get<any[]>(`${environment.providerUrl}/providers`).subscribe({
-      next: (providers) => {
-        console.log('Providers loaded:', providers);
-        this.totalProviders = providers.length;
-        this.verifiedProviders = providers.filter((p: any) => p.isVerified).length;
-        this.pendingProviders = providers.filter((p: any) => !p.isVerified).length;
-      },
-      error: (err) => {
-        console.error('Failed to load providers:', err);
-        this.totalProviders = 0;
-        this.verifiedProviders = 0;
-        this.pendingProviders = 0;
-      }
+      // 2. Calculate Robust Provider Stats
+      console.log('Providers loaded:', providers);
+      const processedUserIds = new Set<number>();
+      let verifiedCount = 0;
+      let totalCount = 0;
+
+      // Check existing providers
+      (providers || []).forEach((p: any) => {
+        const uId = p.userId || p.UserId;
+        const user = (users || []).find((u: any) => (u.userId || u.UserId) === uId);
+        processedUserIds.add(uId);
+        totalCount++;
+        
+        if (p.isVerified === true || p.IsVerified === true || p.status === 'Verified' || p.Status === 'Verified' || user?.verified) {
+          verifiedCount++;
+        }
+      });
+
+      // Check users with Provider role who don't have a profile
+      (users || []).forEach((u: any) => {
+        const uId = u.userId || u.UserId;
+        const role = (u.role || u.Role || '').toLowerCase();
+        
+        if (role === 'provider' && !processedUserIds.has(uId)) {
+          totalCount++;
+          if (u.verified === true || u.Verified === true || u.isVerified === true) {
+            verifiedCount++;
+          }
+        }
+      });
+
+      this.totalProviders = totalCount;
+      this.verifiedProviders = verifiedCount;
+      this.pendingProviders = totalCount - verifiedCount;
+      
+      // Calculate analytics after base data is loaded
+      this.calculateAnalytics();
     });
 
     // Load real appointments from API

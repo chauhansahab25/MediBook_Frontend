@@ -14,10 +14,13 @@ export class AddMedicalRecordDialogComponent {
     notes: '',
     recordType: 'Consultation',
     followUpDate: null,
+    vaccinationDate: null,
     labResults: '',
     allergyInfo: '',
-    surgeryDetails: ''
+    surgeryDetails: '',
+    documentUrl: ''
   };
+  selectedFile: File | null = null;
   submitting = false;
   error = '';
 
@@ -27,8 +30,19 @@ export class AddMedicalRecordDialogComponent {
     private medicalRecordService: MedicalRecordService
   ) {}
 
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile = file;
+      // In a real app, you'd upload this to a storage service and get a URL
+      // For now, we'll store the filename or a mock URL
+      this.recordData.documentUrl = `uploads/${file.name}`;
+      console.log('File selected:', file.name);
+    }
+  }
+
   onSubmit(): void {
-    if (!this.recordData.diagnosis) {
+    if (this.recordData.recordType !== 'Lab Report' && this.recordData.recordType !== 'Vaccination' && !this.recordData.diagnosis) {
       this.error = 'Diagnosis is required.';
       return;
     }
@@ -45,10 +59,11 @@ export class AddMedicalRecordDialogComponent {
       notes: this.recordData.notes ? this.recordData.notes : null,
       recordType: this.recordData.recordType,
       followUpDate: this.recordData.followUpDate ? this.recordData.followUpDate : null,
-      // Include conditional fields based on record type
+      vaccinationDate: this.recordData.vaccinationDate ? this.recordData.vaccinationDate : null,
       labResults: this.recordData.labResults ? this.recordData.labResults : null,
       allergyInfo: this.recordData.allergyInfo ? this.recordData.allergyInfo : null,
-      surgeryDetails: this.recordData.surgeryDetails ? this.recordData.surgeryDetails : null
+      surgeryDetails: this.recordData.surgeryDetails ? this.recordData.surgeryDetails : null,
+      documentUrl: this.recordData.documentUrl || null
     };
 
     this.medicalRecordService.createRecord(payload).subscribe({

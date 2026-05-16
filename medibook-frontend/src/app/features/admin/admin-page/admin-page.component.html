@@ -26,24 +26,24 @@
     <!-- Stats Cards -->
     <div class="stats-row" *ngIf="!loading && !error && dataList.length > 0">
       <div class="stat-card">
-        <mat-icon>list</mat-icon>
+        <mat-icon>{{ pageType === 'providers' ? 'people' : 'list' }}</mat-icon>
         <div class="stat-info">
           <span class="stat-value">{{ totalCount }}</span>
-          <span class="stat-label">Total</span>
+          <span class="stat-label">{{ pageType === 'providers' ? 'Total Providers' : 'Total' }}</span>
         </div>
       </div>
       <div class="stat-card" *ngIf="activeCount > 0">
-        <mat-icon>check_circle</mat-icon>
+        <mat-icon>{{ pageType === 'providers' ? 'verified' : 'check_circle' }}</mat-icon>
         <div class="stat-info">
           <span class="stat-value">{{ activeCount }}</span>
-          <span class="stat-label">Active</span>
+          <span class="stat-label">{{ pageType === 'providers' ? 'Verified Providers' : 'Active' }}</span>
         </div>
       </div>
       <div class="stat-card" *ngIf="pendingCount > 0">
-        <mat-icon>pending</mat-icon>
+        <mat-icon>{{ pageType === 'providers' ? 'person_search' : 'pending' }}</mat-icon>
         <div class="stat-info">
           <span class="stat-value">{{ pendingCount }}</span>
-          <span class="stat-label">Pending</span>
+          <span class="stat-label">{{ pageType === 'providers' ? 'Pending Verification' : 'Pending' }}</span>
         </div>
       </div>
     </div>
@@ -76,7 +76,6 @@
           <span class="stat-label">Transactions</span>
           <div class="payment-status-summary">
             <span class="status-count completed">{{ completedPayments }} completed</span>
-            <span class="status-count pending">{{ pendingPayments }} pending</span>
           </div>
         </div>
       </div>
@@ -131,6 +130,8 @@
             <th *ngIf="pageType === 'appointments'">Mode</th>
             <th *ngIf="pageType === 'appointments'">Payment</th>
             <th *ngIf="pageType === 'appointments'">Status</th>
+            <th *ngIf="pageType === 'payments'">Patient</th>
+            <th *ngIf="pageType === 'payments'">Provider</th>
             <th *ngIf="pageType === 'payments'">Amount</th>
             <th *ngIf="pageType === 'payments'">Refunded Amount</th>
             <th *ngIf="pageType === 'payments'">Status</th>
@@ -250,6 +251,8 @@
             </td>
 
             <!-- Payments -->
+            <td *ngIf="pageType === 'payments'">{{ item.patientName }}</td>
+            <td *ngIf="pageType === 'payments'">{{ item.providerName }}</td>
             <td *ngIf="pageType === 'payments'">{{ item.amount | currency:'INR' }}</td>
             <td *ngIf="pageType === 'payments'">
               <span *ngIf="item.status === 'Refunded'" class="refunded-amount">
@@ -313,6 +316,10 @@
               <button class="action-btn download" (click)="downloadRecord(item)">
                 <mat-icon>download</mat-icon>
                 <span>Download</span>
+              </button>
+              <button class="action-btn delete" (click)="deleteRecord(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
               </button>
             </td>
 

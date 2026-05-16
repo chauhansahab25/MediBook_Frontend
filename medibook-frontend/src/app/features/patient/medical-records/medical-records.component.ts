@@ -3,7 +3,8 @@ import { Router } from '@angular/router';
 import { MedicalRecordService } from '../../../core/services/medical-record.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ProviderService } from '../../../core/services/provider.service';
-import { forkJoin, of } from 'rxjs';
+import { UserService } from '../../../core/services/user.service';
+import { forkJoin, of, firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-medical-records',
@@ -18,7 +19,8 @@ export class MedicalRecordsComponent implements OnInit {
     private router: Router,
     private medicalRecordService: MedicalRecordService,
     private authService: AuthService,
-    private providerService: ProviderService
+    private providerService: ProviderService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
@@ -50,14 +52,36 @@ export class MedicalRecordsComponent implements OnInit {
         });
 
         forkJoin(providerRequests).subscribe({
-          next: (providers) => {
-            this.records = data.map((record, index) => {
-              const provider = providers[index];
-              return {
+          next: async (providers) => {
+            const enrichedRecords = [];
+            
+            for (let i = 0; i < data.length; i++) {
+              const record = data[i];
+              const provider = providers[i];
+              let name = provider?.fullName || provider?.FullName;
+
+              // If name is still placeholder/missing, try fetching from UserService
+              if (!name || name.startsWith('Provider #') || name === 'N/A') {
+                const uId = provider?.userId || record.providerId;
+                if (uId) {
+                  try {
+                    const user = await firstValueFrom(this.userService.getUserById(uId)).catch(() => null);
+                    if (user) {
+                      name = user.fullName || user.FullName;
+                    }
+                  } catch (e) {
+                    console.warn(`Could not resolve user for provider ${uId}`);
+                  }
+                }
+              }
+
+              enrichedRecords.push({
                 ...record,
-                providerName: provider?.fullName ? `Dr. ${provider.fullName}` : `Provider ID: ${record.providerId}`
-              };
-            });
+                providerName: name ? `Dr. ${name}` : `Dr. Provider #${record.providerId}`
+              });
+            }
+            
+            this.records = enrichedRecords;
             this.loading = false;
           },
           error: (err) => {
@@ -84,21 +108,20 @@ export class MedicalRecordsComponent implements OnInit {
     return this.records.filter(r => r.recordType === type);
   }
 
-  getPrescriptionRecords(): any[] {
-    return this.records.filter(r => r.recordType === 'Prescription');
+  getConsultationRecords(): any[] {
+    return this.records.filter(r => r.recordType === 'Consultation');
   }
 
   getLabRecords(): any[] {
     return this.records.filter(r => r.recordType === 'Lab Report');
   }
 
-  getConsultationRecords(): any[] {
-    return this.records.filter(r => r.recordType === 'Consultation');
+  getVaccinationRecords(): any[] {
+    return this.records.filter(r => r.recordType === 'Vaccination');
   }
 
-  getOtherRecords(): any[] {
-    const types = ['Prescription', 'Lab Report', 'Consultation'];
-    return this.records.filter(r => !types.includes(r.recordType));
+  getSurgeryRecords(): any[] {
+    return this.records.filter(r => r.recordType === 'Surgery');
   }
 
   resetData(): void {
@@ -121,12 +144,23 @@ export class MedicalRecordsComponent implements OnInit {
 
   downloadRecord(record: any): void {
     console.log('Downloading record:', record);
+    
+    // If a specific document is uploaded, download/view that instead
+    if (record.documentUrl) {
+      // In a real app, this would be a full URL. For now, we open/download it.
+      const fileUrl = record.documentUrl.startsWith('http') ? record.documentUrl : `${this.medicalRecordService['apiUrl']}/${record.documentUrl}`;
+      window.open(fileUrl, '_blank');
+      return;
+    }
+
+    // Fallback: Download a summary text file
     this.medicalRecordService.downloadRecord(record.recordId || record.id).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Medical_Record_${record.diagnosis.replace(/\s+/g, '_')}_${new Date(record.createdAt).toLocaleDateString()}.txt`;
+        const dateStr = new Date(record.createdAt || record.date).toLocaleDateString().replace(/\//g, '-');
+        a.download = `Medical_Record_${(record.diagnosis || record.recordType).replace(/\s+/g, '_')}_${dateStr}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

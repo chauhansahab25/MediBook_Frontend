@@ -30,30 +30,38 @@ export class PatientDashboardComponent implements OnInit {
   }
 
   private loadDashboardStats(): void {
+    if (!this.user || !this.user.userId) return;
+    
     this.loading = true;
     this.error = '';
 
-    // Load appointments from API
-    this.appointmentService.getAppointments().subscribe({
-      next: (appointments) => {
-        const today = new Date();
-        this.upcomingAppointments = appointments.filter((a: any) => new Date(a.date) >= today).length;
-        this.pastAppointments = appointments.filter((a: any) => new Date(a.date) < today).length;
+    // Load patient-specific appointments from API for real-time counts
+    this.appointmentService.getAppointmentsByPatient(this.user.userId).subscribe({
+      next: (appointments: any[]) => {
+        // Correctly categorize based on status and date
+        this.upcomingAppointments = appointments.filter((a: any) => 
+          ['Scheduled', 'Confirmed'].includes(a.status)
+        ).length;
+        
+        this.pastAppointments = appointments.filter((a: any) => 
+          a.status === 'Completed'
+        ).length;
+        
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load appointments: ' + (err.message || 'Unknown error');
+        console.error('Failed to load dashboard appointments:', err);
         this.loading = false;
       }
     });
 
-    // Load providers count from API
+    // Load total providers count from API
     this.providerService.getProviders().subscribe({
       next: (providers) => {
         this.providersCount = providers.length;
       },
       error: (err) => {
-        console.error('Failed to load providers:', err);
+        console.error('Failed to load providers count:', err);
       }
     });
   }

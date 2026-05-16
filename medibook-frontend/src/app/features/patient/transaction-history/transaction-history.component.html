@@ -69,6 +69,10 @@
                 <span class="detail-label">Transaction ID:</span>
                 <span class="detail-value">{{ transaction.transactionId || 'N/A' }}</span>
               </div>
+              <div class="detail-row" *ngIf="transaction.providerName">
+                <span class="detail-label">Provider:</span>
+                <span class="detail-value" style="font-weight: 500;">{{ transaction.providerName }}</span>
+              </div>
               <div class="detail-row">
                 <span class="detail-label">Payment Method:</span>
                 <span class="detail-value">{{ transaction.mode || 'Online' }}</span>

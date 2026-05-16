@@ -9,9 +9,11 @@
   </div>
 
   <div class="details-card">
-    <div class="status-badge" [class.booked]="booking.status === 'booked'">
-      <mat-icon>event_available</mat-icon>
-      <span>Booked</span>
+    <div class="status-badge" [class.booked]="booking.status === 'Scheduled' || booking.status === 'Confirmed'"
+      [class.completed]="booking.status === 'Completed'" [class.cancelled]="booking.status === 'Cancelled'">
+      <mat-icon>{{ booking.status === 'Completed' ? 'check_circle' : (booking.status === 'Cancelled' ? 'cancel' :
+        'event_available') }}</mat-icon>
+      <span>{{ booking.status || 'Booked' }}</span>
     </div>
 
     <div class="info-section">
@@ -33,8 +35,33 @@
       <div class="info-row">
         <mat-icon>medical_services</mat-icon>
         <div class="info-content">
+          <label>Service Type</label>
+          <span>{{ booking.serviceType || 'General Consultation' }}</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <mat-icon>description</mat-icon>
+        <div class="info-content">
           <label>Reason</label>
-          <span>{{ booking.reason }}</span>
+          <span>{{ booking.reason || booking.notes }}</span>
+        </div>
+      </div>
+      <div class="info-row">
+        <mat-icon
+          [class.text-success]="booking.paymentStatus === 'Completed' || booking.paymentStatus === 'Paid' || booking.paymentStatus === 'Success'"
+          [class.text-warning]="booking.paymentStatus === 'Pending'"
+          [class.text-danger]="booking.paymentStatus === 'Unpaid' || booking.paymentStatus === 'Refunded'">
+          payments
+        </mat-icon>
+        <div class="info-content">
+          <label>Payment Status</label>
+          <span
+            [class.status-green-paid]="booking.paymentStatus === 'Completed' || booking.paymentStatus === 'Paid' || booking.paymentStatus === 'Success'"
+            [class.status-orange-pending]="booking.paymentStatus === 'Pending'"
+            [class.status-red-unpaid]="booking.paymentStatus === 'Unpaid' || booking.paymentStatus === 'Refunded'">
+            {{ booking.paymentStatus || 'Unpaid' }}
+            <span *ngIf="booking.paymentAmount">({{ booking.paymentAmount | currency:'INR' }})</span>
+          </span>
         </div>
       </div>
     </div>
@@ -46,8 +73,8 @@
       <div class="patient-header">
         <div class="patient-avatar">{{ getInitials(booking.patientName) }}</div>
         <div class="patient-name-block">
-          <span class="name">{{ booking.patientName }}</span>
-          <span class="id">Appointment ID: {{ booking.appointmentId }}</span>
+          <span class="name">{{ booking.patientName || 'Patient' }}</span>
+          <span class="id">Reference ID: #{{ booking.appointmentId || booking.id }}</span>
         </div>
       </div>
       <div class="info-row">
@@ -66,7 +93,7 @@
       </div>
     </div>
 
-    <div class="actions">
+    <div class="actions" *ngIf="booking.status !== 'Completed' && booking.status !== 'Cancelled'">
       <button class="btn-secondary" (click)="rescheduleBooking()">
         <mat-icon>edit_calendar</mat-icon>
         Reschedule

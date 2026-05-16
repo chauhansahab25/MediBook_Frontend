@@ -122,7 +122,7 @@
           <button *ngIf="appointment.status?.toLowerCase() !== 'cancelled' && appointment.status?.toLowerCase() !== 'completed'" class="action-btn cancel" (click)="cancelAppointment(appointment)" title="Cancel Appointment">
             <mat-icon>close</mat-icon>
           </button>
-          <button *ngIf="appointment.status?.toLowerCase() === 'cancelled'" class="action-btn delete" (click)="deleteAppointment(appointment)" title="Delete Record" [ngStyle]="{'background': '#f44336', 'color': 'white'}">
+          <button *ngIf="appointment.status?.toLowerCase() === 'cancelled' || appointment.status?.toLowerCase() === 'completed'" class="action-btn delete" (click)="deleteAppointment(appointment)" title="Delete Record" [ngStyle]="{'background': '#f44336', 'color': 'white'}">
             <mat-icon>delete</mat-icon>
           </button>
         </div>

@@ -160,9 +160,9 @@
             <span class="time-end">{{ slot.endTime }}</span>
           </div>
           <div class="slot-content">
-            <div class="slot-status" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked">
-              <mat-icon>{{ slot.isBooked ? 'person' : 'radio_button_checked' }}</mat-icon>
-              <span>{{ slot.isBooked ? 'Booked' : 'Available' }}</span>
+            <div class="slot-status" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked" [class.completed]="slot.status === 'Completed'">
+              <mat-icon>{{ slot.status === 'Completed' ? 'check_circle' : (slot.isBooked ? 'person' : 'radio_button_checked') }}</mat-icon>
+              <span>{{ slot.status === 'Completed' ? 'Completed' : (slot.isBooked ? 'Booked' : 'Available') }}</span>
             </div>
             <div class="slot-patient" *ngIf="slot.isBooked && slot.patientName">
               <div class="patient-info">
@@ -254,9 +254,9 @@
               </div>
             </div>
             <div class="card-status-block">
-              <span class="status-pill" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked">
-                <mat-icon>{{ slot.isBooked ? 'person' : 'radio_button_checked' }}</mat-icon>
-                {{ slot.isBooked ? 'Booked' : 'Open' }}
+              <span class="status-pill" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked" [class.completed]="slot.status === 'Completed'">
+                <mat-icon>{{ slot.status === 'Completed' ? 'check_circle' : (slot.isBooked ? 'person' : 'radio_button_checked') }}</mat-icon>
+                {{ slot.status === 'Completed' ? 'Completed' : (slot.isBooked ? 'Booked' : 'Open') }}
               </span>
               <span class="type-pill" [class.morning]="isMorning(slot)" [class.afternoon]="isAfternoon(slot)" [class.evening]="isEvening(slot)">
                 <mat-icon>{{ isMorning(slot) ? 'wb_sunny' : (isAfternoon(slot) ? 'brightness_5' : 'brightness_2') }}</mat-icon>
