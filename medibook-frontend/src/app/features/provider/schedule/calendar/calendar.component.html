@@ -1,0 +1,119 @@
+<div class="calendar-container">
+  <!-- Header -->
+  <div class="header">
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back to Schedule</span>
+    </button>
+    <h1>Calendar View</h1>
+    <p>View and manage your monthly availability calendar</p>
+  </div>
+
+  <!-- Calendar Card -->
+  <div class="calendar-card">
+    <div class="calendar-header">
+      <button class="nav-btn" (click)="previousMonth()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <h2>{{ monthNames[currentMonth.getMonth()] }} {{ currentMonth.getFullYear() }}</h2>
+      <button class="nav-btn" (click)="nextMonth()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <div class="weekdays">
+      <span>Sun</span>
+      <span>Mon</span>
+      <span>Tue</span>
+      <span>Wed</span>
+      <span>Thu</span>
+      <span>Fri</span>
+      <span>Sat</span>
+    </div>
+
+    <div class="days-grid">
+      <div *ngFor="let day of calendarDays" 
+           class="day" 
+           [class.empty]="day.empty"
+           [class.today]="day.isToday"
+           [class.selected]="day.isSelected"
+           (click)="selectDate(day)">
+        <span *ngIf="!day.empty" class="day-number">{{ day.day }}</span>
+        <div *ngIf="!day.empty && day.totalSlots > 0" class="day-slots">
+          <span *ngIf="day.availableSlots > 0" class="slot-dot available"></span>
+          <span *ngIf="day.bookedSlots > 0" class="slot-dot booked"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected Date Details -->
+  <div class="date-details-section" *ngIf="selectedDate">
+    <div class="date-details-header">
+      <div class="date-details-title">
+        <h3>{{ getSelectedDateDisplay() }}</h3>
+      </div>
+      <div class="date-details-stats">
+        <div class="stat-chip">
+          <mat-icon>event_available</mat-icon>
+          <span>{{ selectedDateAvailableCount }} Available</span>
+        </div>
+        <div class="stat-chip">
+          <mat-icon>event_busy</mat-icon>
+          <span>{{ selectedDateBookedCount }} Booked</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="date-details-content" *ngIf="selectedDateSlots.length > 0">
+      <div class="slots-timeline">
+        <div class="timeline-slot" *ngFor="let slot of selectedDateSlots; let i = index" 
+             [class.booked]="slot.isBooked"
+             [style.animation-delay]="i * 0.05 + 's'">
+          <div class="slot-time">
+            <span class="time-start">{{ slot.startTime }}</span>
+            <span class="time-end">{{ slot.endTime }}</span>
+          </div>
+          <div class="slot-content">
+            <div class="slot-status" [class.available]="!slot.isBooked" [class.booked]="slot.isBooked">
+              <mat-icon>{{ slot.isBooked ? 'person' : 'radio_button_checked' }}</mat-icon>
+              <span>{{ slot.isBooked ? 'Booked' : 'Available' }}</span>
+            </div>
+            <div class="slot-patient" *ngIf="slot.isBooked && slot.patientName">
+              <div class="patient-info">
+                <span class="patient-name">{{ slot.patientName }}</span>
+                <span class="patient-id">ID: {{ slot.slotId }}</span>
+              </div>
+            </div>
+            <div class="slot-actions" *ngIf="!slot.isBooked">
+              <button class="edit-btn" (click)="editSlot(slot)">
+                <mat-icon>edit</mat-icon>
+                Edit
+              </button>
+              <button class="delete-btn" (click)="deleteSlot(slot)">
+                <mat-icon>delete_outline</mat-icon>
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="empty-date-state" *ngIf="selectedDateSlots.length === 0">
+      <div class="empty-icon">
+        <mat-icon>event_busy</mat-icon>
+      </div>
+      <h4>No Appointments</h4>
+      <p>No appointments scheduled for this date.</p>
+    </div>
+  </div>
+
+  <!-- Actions Bar -->
+  <div class="actions-bar">
+    <button class="btn-primary" (click)="addSlot()">
+      <mat-icon>add</mat-icon>
+      Add New Slot
+    </button>
+  </div>
+</div>
