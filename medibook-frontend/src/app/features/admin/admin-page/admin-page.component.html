@@ -1,0 +1,354 @@
+<div class="admin-page">
+  <!-- Background Shapes -->
+  <div class="bg-shape shape-1"></div>
+  <div class="bg-shape shape-2"></div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Back</span>
+    </button>
+
+    <div class="header-content">
+      <div class="header-icon">
+        <mat-icon>{{ pageIcon }}</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>{{ pageTitle }}</h1>
+        <p>{{ pageDescription }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="page-content">
+    <!-- Stats Cards -->
+    <div class="stats-row" *ngIf="!loading && !error && dataList.length > 0">
+      <div class="stat-card">
+        <mat-icon>{{ pageType === 'providers' ? 'people' : 'list' }}</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalCount }}</span>
+          <span class="stat-label">{{ pageType === 'providers' ? 'Total Providers' : 'Total' }}</span>
+        </div>
+      </div>
+      <div class="stat-card" *ngIf="activeCount > 0">
+        <mat-icon>{{ pageType === 'providers' ? 'verified' : 'check_circle' }}</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ activeCount }}</span>
+          <span class="stat-label">{{ pageType === 'providers' ? 'Verified Providers' : 'Active' }}</span>
+        </div>
+      </div>
+      <div class="stat-card" *ngIf="pendingCount > 0">
+        <mat-icon>{{ pageType === 'providers' ? 'person_search' : 'pending' }}</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ pendingCount }}</span>
+          <span class="stat-label">{{ pageType === 'providers' ? 'Pending Verification' : 'Pending' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Stats Cards -->
+    <div class="stats-row" *ngIf="!loading && !error && pageType === 'payments'">
+      <div class="stat-card revenue-card">
+        <mat-icon>payments</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalRevenue | currency:'INR' }}</span>
+          <span class="stat-label">Total Revenue</span>
+          <div class="real-time-indicator">
+            <mat-icon class="pulse-icon">update</mat-icon>
+            <span>Live</span>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <mat-icon>today</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ todayPayments | currency:'INR' }}</span>
+          <span class="stat-label">Today's Payments</span>
+          <small class="last-updated">Last: {{ lastPaymentUpdate | date:'shortTime' }}</small>
+        </div>
+      </div>
+      <div class="stat-card">
+        <mat-icon>receipt_long</mat-icon>
+        <div class="stat-info">
+          <span class="stat-value">{{ totalCount }}</span>
+          <span class="stat-label">Transactions</span>
+          <div class="payment-status-summary">
+            <span class="status-count completed">{{ completedPayments }} completed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <mat-spinner diameter="50" color="warn"></mat-spinner>
+      <p>Loading data...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-container" *ngIf="!loading && error">
+      <mat-icon class="error-icon">error_outline</mat-icon>
+      <h3>Failed to Load Data</h3>
+      <p>{{ error }}</p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="retry-btn" (click)="refreshData()">
+          <mat-icon>refresh</mat-icon>
+          Try Again
+        </button>
+        <button class="retry-btn" (click)="goBack()" *ngIf="error.includes('Authentication')">
+          <mat-icon>login</mat-icon>
+          Go to Login
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-container" *ngIf="!loading && !error && dataList.length === 0">
+      <mat-icon class="empty-icon">inbox</mat-icon>
+      <h3>No Data Found</h3>
+      <p>There are no records to display at this time.</p>
+    </div>
+
+    <!-- Data Table -->
+    <div class="data-table-container" *ngIf="!loading && !error && dataList.length > 0">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th *ngIf="pageType === 'users' || pageType === 'providers'">Name</th>
+            <th *ngIf="pageType === 'users' || pageType === 'providers'">Email</th>
+            <th *ngIf="pageType === 'users'">Role</th>
+            <th *ngIf="pageType === 'users'">Status</th>
+            <th *ngIf="pageType === 'providers'">Specialization</th>
+            <th *ngIf="pageType === 'providers'">Verified</th>
+            <th *ngIf="pageType === 'appointments'">Patient</th>
+            <th *ngIf="pageType === 'appointments'">Provider</th>
+            <th *ngIf="pageType === 'appointments'">Service</th>
+            <th *ngIf="pageType === 'appointments'">Date</th>
+            <th *ngIf="pageType === 'appointments'">Time</th>
+            <th *ngIf="pageType === 'appointments'">Mode</th>
+            <th *ngIf="pageType === 'appointments'">Payment</th>
+            <th *ngIf="pageType === 'appointments'">Status</th>
+            <th *ngIf="pageType === 'payments'">Patient</th>
+            <th *ngIf="pageType === 'payments'">Provider</th>
+            <th *ngIf="pageType === 'payments'">Amount</th>
+            <th *ngIf="pageType === 'payments'">Refunded Amount</th>
+            <th *ngIf="pageType === 'payments'">Status</th>
+            <th *ngIf="pageType === 'payments'">Date</th>
+            <th *ngIf="pageType === 'reviews'" class="col-patient">Patient</th>
+            <th *ngIf="pageType === 'reviews'" class="col-provider">Provider</th>
+            <th *ngIf="pageType === 'reviews'" class="col-rating">Rating</th>
+            <th *ngIf="pageType === 'reviews'" class="col-comment">Comment</th>
+            <th *ngIf="pageType === 'records'">Patient</th>
+            <th *ngIf="pageType === 'records'">Title</th>
+            <th *ngIf="pageType === 'records'">Date</th>
+            <th *ngIf="pageType === 'notifications'">Title</th>
+            <th *ngIf="pageType === 'notifications'">Message</th>
+            <th *ngIf="pageType === 'notifications'">Read</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of dataList">
+            <!-- Users -->
+            <td *ngIf="pageType === 'users'">{{ item.fullName }}</td>
+            <td *ngIf="pageType === 'users'">{{ item.email }}</td>
+            <td *ngIf="pageType === 'users'">{{ item.role }}</td>
+            <td *ngIf="pageType === 'users'">
+              <span class="status-badge" [class.active]="item.isActive">{{ item.isActive ? 'Active' : 'Inactive' }}</span>
+            </td>
+            <td *ngIf="pageType === 'users'" class="actions-cell">
+              <button class="action-btn edit" (click)="editUser(item)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button class="action-btn toggle" (click)="toggleUserStatus(item)">
+                <mat-icon>{{ item.isActive ? 'block' : 'check_circle' }}</mat-icon>
+                <span>{{ item.isActive ? 'Deactivate' : 'Activate' }}</span>
+              </button>
+              <button class="action-btn delete" (click)="deleteUser(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </td>
+
+            <!-- Providers -->
+            <td *ngIf="pageType === 'providers'">{{ item.fullName }}</td>
+            <td *ngIf="pageType === 'providers'">{{ item.email }}</td>
+            <td *ngIf="pageType === 'providers'">{{ item.specialization }}</td>
+            <td *ngIf="pageType === 'providers'">
+              <span class="status-badge" [class.active]="item.isVerified">{{ item.isVerified ? 'Yes' : 'No' }}</span>
+            </td>
+            <td *ngIf="pageType === 'providers'" class="actions-cell">
+              <button class="action-btn edit" (click)="editProvider(item)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button class="action-btn toggle" (click)="toggleProviderStatus(item)">
+                <mat-icon>{{ item.isVerified ? 'cancel' : 'verified' }}</mat-icon>
+                <span>{{ item.isVerified ? 'Unverify' : 'Verify' }}</span>
+              </button>
+              <button class="action-btn delete" (click)="deleteProvider(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </td>
+
+            <!-- Appointments -->
+            <td *ngIf="pageType === 'appointments'">
+              <div>
+                <div>{{ item.patientName }}</div>
+                <small style="color: #666;">ID: {{ item.patientId }}</small>
+              </div>
+            </td>
+            <td *ngIf="pageType === 'appointments'">
+              <div>
+                <div>{{ item.providerName }}</div>
+                <small style="color: #666;">{{ item.specialization || 'N/A' }}</small>
+              </div>
+            </td>
+            <td *ngIf="pageType === 'appointments'">{{ item.serviceType }}</td>
+            <td *ngIf="pageType === 'appointments'">{{ item.appointmentDate | date:'MMM dd, yyyy' }}</td>
+            <td *ngIf="pageType === 'appointments'">
+              {{ item.startTime ? (item.startTime.toString().includes(':') ? item.startTime : (item.startTime | date:'shortTime')) : 'N/A' }} - 
+              {{ item.endTime ? (item.endTime.toString().includes(':') ? item.endTime : (item.endTime | date:'shortTime')) : 'N/A' }}
+            </td>
+            <td *ngIf="pageType === 'appointments'">{{ item.modeOfConsultation }}</td>
+            <td *ngIf="pageType === 'appointments'">
+              <span class="payment-badge" [class]="(item.paymentStatus || 'pending').toLowerCase()">
+                {{ item.paymentStatus || 'Pending' }}
+              </span>
+              <div *ngIf="item.paymentAmount" style="font-size: 12px; color: #666;">
+                {{ item.paymentAmount | currency:'INR' }}
+              </div>
+            </td>
+            <td *ngIf="pageType === 'appointments'">
+              <span class="status-badge" [class]="item.status?.toLowerCase()">{{ item.status }}</span>
+              <div *ngIf="item.cancelledBy" style="font-size: 12px; color: #666;">
+                By: {{ item.cancelledBy }}
+              </div>
+            </td>
+            <td *ngIf="pageType === 'appointments'" class="actions-cell">
+              <button class="action-btn view" (click)="viewAppointment(item)">
+                <mat-icon>visibility</mat-icon>
+                <span>View</span>
+              </button>
+              <!-- Show Cancel button only for Scheduled/Pending appointments -->
+              <button class="action-btn delete" 
+                      *ngIf="item.status === 'Scheduled' || item.status === 'Pending'" 
+                      (click)="deleteAppointment(item)">
+                <mat-icon>cancel</mat-icon>
+                <span>Cancel</span>
+              </button>
+              <!-- Show Delete button only for Cancelled/Failed/Completed appointments -->
+              <button class="action-btn delete" 
+                      *ngIf="item.status === 'Cancelled' || item.status === 'Failed' || item.status === 'Completed'" 
+                      (click)="deleteAppointment(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </td>
+
+            <!-- Payments -->
+            <td *ngIf="pageType === 'payments'">{{ item.patientName }}</td>
+            <td *ngIf="pageType === 'payments'">{{ item.providerName }}</td>
+            <td *ngIf="pageType === 'payments'">{{ item.amount | currency:'INR' }}</td>
+            <td *ngIf="pageType === 'payments'">
+              <span *ngIf="item.status === 'Refunded'" class="refunded-amount">
+                {{ (item.refundAmount || item.amount - 50) | currency:'INR' }}
+              </span>
+              <span *ngIf="item.status !== 'Refunded'">-</span>
+            </td>
+            <td *ngIf="pageType === 'payments'">
+              <span class="status-badge" [class]="item.status?.toLowerCase()">{{ item.status }}</span>
+            </td>
+            <td *ngIf="pageType === 'payments'">{{ item.date | date:'MMM dd, yyyy' }}</td>
+            <td *ngIf="pageType === 'payments'" class="actions-cell">
+              <button class="action-btn view" (click)="viewPayment(item)">
+                <mat-icon>visibility</mat-icon>
+                <span>View</span>
+              </button>
+              <button class="action-btn delete" (click)="deletePayment(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </td>
+
+            <!-- Reviews -->
+            <td *ngIf="pageType === 'reviews'" class="col-patient">
+              <div style="font-weight: 600; color: #00838f;">{{ item.patientName || 'Anonymous' }}</div>
+            </td>
+            <td *ngIf="pageType === 'reviews'" class="col-provider">
+              <div class="provider-name">{{ item.providerName || ('ID: ' + item.providerId) }}</div>
+            </td>
+            <td *ngIf="pageType === 'reviews'" class="col-rating">
+              <span class="rating">{{ item.rating }} <mat-icon>star</mat-icon></span>
+            </td>
+            <td *ngIf="pageType === 'reviews'" class="col-comment">
+              <span class="comment-text" [title]="item.comment">{{ item.comment }}</span>
+            </td>
+            <td *ngIf="pageType === 'reviews'" class="actions-cell">
+              <button class="action-btn view" (click)="viewReview(item)">
+                <mat-icon>visibility</mat-icon>
+                <span>View</span>
+              </button>
+              <button class="action-btn delete" (click)="deleteReview(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </td>
+
+            <!-- Records -->
+            <td *ngIf="pageType === 'records'">{{ item.patientName }}</td>
+            <td *ngIf="pageType === 'records'">{{ item.title }}</td>
+            <td *ngIf="pageType === 'records'">
+              <div>
+                <div>{{ item.appointmentDate | date:'MMM dd, yyyy' }}</div>
+                <small style="color: #666;">Recorded: {{ item.createdAt | date:'MMM dd, yyyy' }}</small>
+              </div>
+            </td>
+            <td *ngIf="pageType === 'records'" class="actions-cell">
+              <button class="action-btn view" (click)="viewRecord(item)">
+                <mat-icon>visibility</mat-icon>
+                <span>View</span>
+              </button>
+              <button class="action-btn download" (click)="downloadRecord(item)">
+                <mat-icon>download</mat-icon>
+                <span>Download</span>
+              </button>
+              <button class="action-btn delete" (click)="deleteRecord(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </td>
+
+            <!-- Notifications -->
+            <td *ngIf="pageType === 'notifications'">{{ item.title }}</td>
+            <td *ngIf="pageType === 'notifications'">{{ item.message | slice:0:50 }}...</td>
+            <td *ngIf="pageType === 'notifications'">
+              <span class="status-badge" [class.active]="!item.isRead">{{ item.isRead ? 'Read' : 'Unread' }}</span>
+            </td>
+            <td *ngIf="pageType === 'notifications'" class="actions-cell">
+              <button class="action-btn view" (click)="viewNotification(item)">
+                <mat-icon>visibility</mat-icon>
+                <span>View</span>
+              </button>
+              <button class="action-btn delete" (click)="deleteNotification(item)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Analytics/Revenue Placeholder -->
+    <div class="analytics-placeholder" *ngIf="!loading && (pageType === 'analytics' || pageType === 'revenue')">
+      <mat-icon>insights</mat-icon>
+      <h3>{{ pageTitle }}</h3>
+      <p>Advanced analytics dashboard coming soon with charts and visualizations.</p>
+    </div>
+  </div>
+</div>

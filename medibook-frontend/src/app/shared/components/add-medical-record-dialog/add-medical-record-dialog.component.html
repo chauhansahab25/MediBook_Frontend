@@ -1,0 +1,124 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <div class="header-title">
+      <mat-icon>note_add</mat-icon>
+      <h2>Add Medical Record</h2>
+    </div>
+    <button mat-icon-button (click)="onCancel()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-scroll-content">
+    <div class="patient-info">
+      <p>Creating record for <strong>{{ data?.patientName }}</strong></p>
+      <span class="appointment-date">{{ data?.appointmentDate | date:'mediumDate' }}</span>
+    </div>
+
+    <div class="error-message" *ngIf="error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+
+    <div class="form-container">
+      <div class="form-group">
+        <label>Record Type <span class="required">*</span></label>
+        <select [(ngModel)]="recordData.recordType" class="select-input">
+          <option value="Consultation">Consultation Notes</option>
+          <option value="Lab Report">Lab Report</option>
+          <option value="Vaccination">Vaccination Record</option>
+          <option value="Surgery">Surgery / Hospitalization</option>
+        </select>
+      </div>
+
+      <!-- Diagnosis Field (Required for most record types) -->
+      <div class="form-group" *ngIf="recordData.recordType !== 'Lab Report' && recordData.recordType !== 'Vaccination'">
+        <label>Diagnosis <span class="required">*</span></label>
+        <textarea [(ngModel)]="recordData.diagnosis" rows="2" placeholder="Enter patient diagnosis (e.g., Hypertension, Viral Fever)"></textarea>
+      </div>
+
+      <!-- Prescription Field (shown for Prescription and Vaccination) -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Prescription' || recordData.recordType === 'Vaccination'">
+        <label>{{ recordData.recordType === 'Vaccination' ? 'Vaccination Details' : 'Prescription' }}</label>
+        <textarea [(ngModel)]="recordData.prescription" rows="3" [placeholder]="recordData.recordType === 'Vaccination' ? 'Enter vaccine name, batch number, and dosage' : 'Enter prescribed medicines, dosage, and duration'"></textarea>
+      </div>
+
+      <!-- File Upload for Prescription -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Prescription'">
+        <label>Upload Prescription (Optional)</label>
+        <div class="file-upload-wrapper">
+          <input type="file" (change)="onFileSelected($event)" accept="image/*,.pdf" id="filePrescription" class="file-input-hidden">
+          <label for="filePrescription" class="file-upload-label">
+            <mat-icon>cloud_upload</mat-icon>
+            <span>{{ selectedFile ? selectedFile.name : 'Choose File (Image or PDF)' }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Vaccination Date Field (shown for Vaccination) -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Vaccination'">
+        <label>Vaccination Date <span class="required">*</span></label>
+        <div class="date-input-wrapper">
+          <input type="date" [(ngModel)]="recordData.vaccinationDate" class="date-input">
+          <mat-icon class="date-icon">event_note</mat-icon>
+        </div>
+      </div>
+
+      <!-- Lab Results Field (shown for Lab Report) -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Lab Report'">
+        <label>Lab Results</label>
+        <textarea [(ngModel)]="recordData.labResults" rows="3" placeholder="Enter lab test results, values, and interpretations"></textarea>
+      </div>
+
+      <!-- File Upload for Lab Report or Surgery -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Lab Report' || recordData.recordType === 'Surgery'">
+        <label>{{ recordData.recordType === 'Surgery' ? 'Upload Surgery Report / Images (Optional)' : 'Upload Lab Report (Optional)' }}</label>
+        <div class="file-upload-wrapper">
+          <input type="file" (change)="onFileSelected($event)" accept="image/*,.pdf" id="fileReport" class="file-input-hidden">
+          <label for="fileReport" class="file-upload-label">
+            <mat-icon>{{ recordData.recordType === 'Surgery' ? 'history_edu' : 'upload_file' }}</mat-icon>
+            <span>{{ selectedFile ? selectedFile.name : 'Choose File (Image or PDF)' }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Allergy Information Field (shown for Allergy Information) -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Allergy'">
+        <label>Allergy Information</label>
+        <textarea [(ngModel)]="recordData.allergyInfo" rows="3" placeholder="Enter allergens, reactions, and severity"></textarea>
+      </div>
+
+      <!-- Surgery Details Field (shown for Surgery/Hospitalization) -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Surgery'">
+        <label>Surgery Details</label>
+        <textarea [(ngModel)]="recordData.surgeryDetails" rows="3" placeholder="Enter surgery procedure, duration, and outcomes"></textarea>
+      </div>
+
+      <!-- Consultation Notes Field (shown for Consultation, Lab Report, Allergy, and Surgery) -->
+      <div class="form-group" *ngIf="recordData.recordType === 'Consultation' || recordData.recordType === 'Lab Report' || recordData.recordType === 'Surgery' || recordData.recordType === 'Allergy'">
+        <label>Consultation Notes</label>
+        <textarea [(ngModel)]="recordData.notes" rows="4" placeholder="Enter symptoms, doctor remarks, allergy info, or other notes"></textarea>
+      </div>
+
+      <!-- Follow-up Date Field (Optional for all record types) -->
+      <div class="form-group">
+        <label>Follow-up Date (Optional)</label>
+        <div class="date-input-wrapper">
+          <input type="date" [(ngModel)]="recordData.followUpDate" class="date-input" placeholder="dd-mm-yyyy">
+          <mat-icon class="date-icon">calendar_today</mat-icon>
+        </div>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="dialog-actions-override">
+    <button mat-button class="cancel-btn" (click)="onCancel()">Cancel</button>
+    <button mat-raised-button class="submit-btn" 
+            [disabled]="submitting || (recordData.recordType !== 'Lab Report' && recordData.recordType !== 'Vaccination' && !recordData.diagnosis)" 
+            (click)="onSubmit()">
+      <mat-icon *ngIf="!submitting">save</mat-icon>
+      <mat-spinner diameter="20" *ngIf="submitting"></mat-spinner>
+      <span>{{ submitting ? 'Saving...' : 'Save Record' }}</span>
+    </button>
+  </mat-dialog-actions>
+</div>

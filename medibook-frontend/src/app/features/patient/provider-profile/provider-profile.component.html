@@ -1,0 +1,128 @@
+<div class="provider-profile">
+  <!-- Animated background shapes -->
+  <div class="floating-shape shape-1"></div>
+  <div class="floating-shape shape-2"></div>
+
+  <!-- Header Section (Matches Search Providers) -->
+  <div class="search-header">
+    <div class="header-content">
+      <button mat-button class="back-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-icon">
+        <mat-icon>person</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>Provider Profile</h1>
+        <p>Comprehensive details and credentials of your healthcare professional</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Section -->
+  <div class="profile-container" *ngIf="provider">
+    
+    <!-- Profile Hero Card (Matches Search Card Style but expanded) -->
+    <mat-card class="hero-card">
+      <div class="hero-header">
+        <div class="provider-avatar-main">
+          <mat-icon>person</mat-icon>
+        </div>
+        <div class="hero-info">
+          <h2 class="provider-name">{{ provider.fullName || provider.clinicName || 'Healthcare Provider' }}</h2>
+          <p class="provider-specialization">{{ provider.specialization || 'General Practice' }}</p>
+          <div class="provider-rating-badge">
+            <mat-icon class="star-icon">star</mat-icon>
+            <span>{{ provider.avgRating || 0 }}</span>
+            <span class="review-count">({{ reviewCount }} reviews)</span>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button mat-raised-button class="book-btn-main" (click)="bookAppointment()">
+            <mat-icon>event</mat-icon>
+            <span>Book Appointment</span>
+          </button>
+        </div>
+      </div>
+    </mat-card>
+
+    <!-- Details Grid -->
+    <div class="details-grid">
+      <mat-card class="detail-card">
+        <div class="card-icon">
+          <mat-icon>local_hospital</mat-icon>
+        </div>
+        <div class="detail-text">
+          <h3>Clinic</h3>
+          <p>{{ provider.clinicName || 'Not specified' }}</p>
+        </div>
+      </mat-card>
+
+      <mat-card class="detail-card">
+        <div class="card-icon">
+          <mat-icon>location_on</mat-icon>
+        </div>
+        <div class="detail-text">
+          <h3>Location</h3>
+          <p>{{ provider.clinicAddress || 'Not specified' }}</p>
+        </div>
+      </mat-card>
+
+      <mat-card class="detail-card">
+        <div class="card-icon">
+          <mat-icon>schedule</mat-icon>
+        </div>
+        <div class="detail-text">
+          <h3>Availability</h3>
+          <p>{{ provider.isAvailable ? 'Available Now' : 'Currently Unavailable' }}</p>
+        </div>
+      </mat-card>
+
+      <mat-card class="detail-card">
+        <div class="card-icon">
+          <mat-icon>work</mat-icon>
+        </div>
+        <div class="detail-text">
+          <h3>Experience</h3>
+          <p>{{ provider.experienceYears ? provider.experienceYears + ' years' : 'Not specified' }}</p>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- About & Qualifications -->
+    <div class="info-sections">
+      <mat-card class="info-card" *ngIf="provider.bio">
+        <div class="card-header-icon">
+          <mat-icon>info</mat-icon>
+          <h3>About</h3>
+        </div>
+        <mat-card-content>
+          <p>{{ provider.bio }}</p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="info-card" *ngIf="provider.qualification">
+        <div class="card-header-icon">
+          <mat-icon>school</mat-icon>
+          <h3>Qualification</h3>
+        </div>
+        <mat-card-content>
+          <p>{{ provider.qualification }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading profile details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ error }}</p>
+    <button mat-button (click)="goBack()">Go Back</button>
+  </div>
+</div>

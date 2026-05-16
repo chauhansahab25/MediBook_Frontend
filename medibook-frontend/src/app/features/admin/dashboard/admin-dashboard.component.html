@@ -1,0 +1,220 @@
+<div class="admin-dashboard">
+  <!-- Animated Background -->
+  <div class="bg-shape shape-1"></div>
+  <div class="bg-shape shape-2"></div>
+  <div class="bg-shape shape-3"></div>
+
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <!-- Logout Button -->
+    <button class="logout-btn" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+
+    <div class="hero-content">
+      <div class="hero-icon">
+        <mat-icon>admin_panel_settings</mat-icon>
+      </div>
+      <div class="hero-text">
+        <h1>Admin Dashboard</h1>
+        <p>Manage users, providers, appointments, and platform analytics</p>
+      </div>
+      <div class="quick-stats">
+        <div class="stat-item">
+          <mat-icon>people</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalUsers }}</span>
+            <span class="stat-label">Users</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <mat-icon>medical_services</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalProviders }}</span>
+            <span class="stat-label">Providers</span>
+          </div>
+        </div>
+        <div class="stat-item">
+          <mat-icon>event</mat-icon>
+          <div class="stat-info">
+            <span class="stat-value">{{ totalAppointments }}</span>
+            <span class="stat-label">Appointments</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div class="content-section">
+    <div class="dashboard-cards">
+      <!-- Users Card -->
+      <div class="dashboard-card users" (click)="navigateToUsers()">
+        <div class="card-header">
+          <div class="card-icon-wrapper">
+            <mat-icon class="card-icon">people</mat-icon>
+          </div>
+        </div>
+        <mat-card-content>
+          <h3>Manage Users</h3>
+          <p>View and manage all user accounts</p>
+          <div class="card-stats">
+            <div class="stat">
+              <span class="stat-number">{{ totalUsers }}</span>
+              <span class="stat-label">Total Users</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ activeUsers }}</span>
+              <span class="stat-label">Active Users</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <div class="card-footer">
+          <span class="action-text">Manage Users</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+
+      <!-- Providers Card -->
+      <div class="dashboard-card providers" (click)="navigateToProviders()">
+        <div class="card-header">
+          <div class="card-icon-wrapper">
+            <mat-icon class="card-icon">medical_services</mat-icon>
+          </div>
+          <div class="card-badge pending" *ngIf="pendingProviders > 0">{{ pendingProviders }}</div>
+        </div>
+        <mat-card-content>
+          <h3>Manage Providers</h3>
+          <p>Verify and manage healthcare providers</p>
+          <div class="card-stats">
+            <div class="stat">
+              <span class="stat-number">{{ totalProviders }}</span>
+              <span class="stat-label">Total Providers</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ verifiedProviders }}</span>
+              <span class="stat-label">Verified Providers</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <div class="card-footer">
+          <span class="action-text">Verify Providers</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+
+      <!-- Appointments Card -->
+      <div class="dashboard-card appointments" (click)="navigateToAppointments()">
+        <div class="card-header">
+          <div class="card-icon-wrapper">
+            <mat-icon class="card-icon">event</mat-icon>
+          </div>
+          <div class="card-badge today" *ngIf="todayAppointments > 0">{{ todayAppointments }}</div>
+        </div>
+        <mat-card-content>
+          <h3>Appointments</h3>
+          <p>View all appointments across the platform</p>
+          <div class="card-stats">
+            <div class="stat">
+              <span class="stat-number">{{ totalAppointments }}</span>
+              <span class="stat-label">Total Appointments</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ todayAppointments }}</span>
+              <span class="stat-label">Today's Appointments</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <div class="card-footer">
+          <span class="action-text">View Schedule</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+
+      <!-- Payments Card -->
+      <div class="dashboard-card payments" (click)="navigateToPayments()">
+        <div class="card-header">
+          <div class="card-icon-wrapper">
+            <mat-icon class="card-icon">payments</mat-icon>
+          </div>
+        </div>
+        <mat-card-content>
+          <h3>Payments</h3>
+          <p>Monitor and manage transactions</p>
+          <div class="card-stats">
+            <div class="stat">
+              <span class="stat-number">₹{{ totalRevenue | number:'1.0-0' }}</span>
+              <span class="stat-label">Total Revenue</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">₹{{ todayPayments | number:'1.0-0' }}</span>
+              <span class="stat-label">Today's Payments</span>
+            </div>
+          </div>
+          <div class="payment-status-summary">
+            <span class="status-count completed">{{ completedPayments }} completed</span>
+          </div>
+        </mat-card-content>
+        <div class="card-footer">
+          <span class="action-text">View Transactions</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+
+      <!-- Reviews Card -->
+      <div class="dashboard-card reviews" (click)="navigateToReviews()">
+        <div class="card-header">
+          <div class="card-icon-wrapper">
+            <mat-icon class="card-icon">star</mat-icon>
+          </div>
+        </div>
+        <mat-card-content>
+          <h3>Reviews</h3>
+          <p>Moderate user reviews</p>
+          <div class="card-stats">
+            <div class="stat">
+              <span class="stat-number">{{ averageRating | number:'1.1' }}</span>
+              <span class="stat-label">Average Rating</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ totalReviews }}</span>
+              <span class="stat-label">Total Reviews</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <div class="card-footer">
+          <span class="action-text">Moderate Reviews</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+
+      <!-- Medical Records Card -->
+      <div class="dashboard-card records" (click)="navigateToRecords()">
+        <div class="card-header">
+          <div class="card-icon-wrapper">
+            <mat-icon class="card-icon">folder_open</mat-icon>
+          </div>
+        </div>
+        <mat-card-content>
+          <h3>Medical Records</h3>
+          <p>Access medical records for audit</p>
+          <div class="card-stats">
+            <div class="stat">
+              <span class="stat-number">{{ totalRecords }}</span>
+              <span class="stat-label">Medical Records</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ securePercentage }}%</span>
+              <span class="stat-label">Secure Records</span>
+            </div>
+          </div>
+        </mat-card-content>
+        <div class="card-footer">
+          <span class="action-text">Access Records</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

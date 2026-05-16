@@ -1,0 +1,119 @@
+<div class="search-providers">
+  <!-- Animated background shapes -->
+  <div class="floating-shape shape-1"></div>
+  <div class="floating-shape shape-2"></div>
+
+  <!-- Header Section -->
+  <div class="search-header">
+    <div class="header-content">
+      <button mat-button class="back-btn" (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-icon">
+        <mat-icon>search</mat-icon>
+      </div>
+      <div class="header-text">
+        <h1>Find Healthcare Providers</h1>
+        <p>Search and book appointments with verified healthcare professionals</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Section -->
+  <div class="search-section">
+    <div class="search-bar-container">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search by name or specialization</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (keyup.enter)="search()" placeholder="e.g., Cardiology, Surgery">
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+      <button mat-raised-button class="search-btn" (click)="search()">
+        <mat-icon>search</mat-icon>
+        <span>Search</span>
+      </button>
+    </div>
+
+    <!-- Filter Tags -->
+    <div class="filter-tags">
+      <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'all'" (click)="setFilter('all')">All</button>
+      <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'cardiology'" (click)="setFilter('cardiology')">Cardiology</button>
+      <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'dermatology'" (click)="setFilter('dermatology')">Dermatology</button>
+      <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'general'" (click)="setFilter('general')">General Medicine</button>
+      <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'pediatrics'" (click)="setFilter('pediatrics')">Pediatrics</button>
+      <button mat-chip class="filter-chip" [class.active]="selectedFilter === 'gynecology'" (click)="setFilter('gynecology')">Gynecologist</button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading providers...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && providers.length === 0" class="empty-state">
+    <div class="empty-icon">
+      <mat-icon>search_off</mat-icon>
+    </div>
+    <h3>No providers found</h3>
+    <p>No healthcare providers match your search criteria. Try adjusting your filters.</p>
+  </div>
+
+  <!-- Providers Grid -->
+  <div *ngIf="!loading && providers.length > 0" class="providers-section">
+    <div class="results-info">
+      <span class="results-count">{{ providers.length }} providers found</span>
+    </div>
+    <div class="providers-grid">
+      <mat-card *ngFor="let provider of providers" class="provider-card">
+        <div class="card-header">
+          <div class="provider-avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="provider-info">
+            <h3 class="provider-name">{{ provider.fullName || provider.clinicName || 'Healthcare Provider' }}</h3>
+            <p class="provider-specialization">{{ provider.specialization }}</p>
+          </div>
+          <div class="provider-rating">
+            <mat-icon class="star-icon">star</mat-icon>
+            <span>{{ provider.avgRating || 0 }}</span>
+          </div>
+        </div>
+        <mat-card-content>
+          <div class="provider-details">
+            <div class="detail-item">
+              <mat-icon>local_hospital</mat-icon>
+              <span>{{ provider.clinicName || 'General Clinic' }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>location_on</mat-icon>
+              <span>{{ provider.clinicAddress || 'Location not specified' }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>schedule</mat-icon>
+              <span>{{ provider.isAvailable ? 'Available Now' : 'Currently Unavailable' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="provider.experienceYears">
+              <mat-icon>work</mat-icon>
+              <span>{{ provider.experienceYears }} years experience</span>
+            </div>
+            <div class="detail-item consultation-fee">
+              <mat-icon>payments</mat-icon>
+              <span>Consultation Fee: <strong>₹{{ provider.consultationFee || 500 }}</strong></span>
+            </div>
+          </div>
+        </mat-card-content>
+        <mat-card-actions>
+          <button mat-button class="action-btn secondary" (click)="viewProfile(provider)">
+            <mat-icon>visibility</mat-icon>
+            <span>View Profile</span>
+          </button>
+          <button mat-raised-button class="action-btn primary" (click)="bookAppointment(provider)">
+            <mat-icon>event</mat-icon>
+            <span>Book Appointment</span>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </div>
+</div>
