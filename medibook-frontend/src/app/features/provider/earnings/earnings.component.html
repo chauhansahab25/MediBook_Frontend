@@ -29,7 +29,7 @@
         </div>
         <div class="summary-content">
           <h3>Total Earnings</h3>
-          <p class="summary-value total-earnings-amount">₹1,500.00</p>
+          <p class="summary-value total-earnings-amount">{{ formatAmount(totalEarnings) }}</p>
         </div>
       </mat-card>
 
@@ -39,7 +39,7 @@
         </div>
         <div class="summary-content">
           <h3>Today's Income</h3>
-          <p class="summary-value today-amount">₹1,000.00</p>
+          <p class="summary-value today-amount">{{ formatAmount(todayEarnings) }}</p>
         </div>
       </mat-card>
     </div>
@@ -77,7 +77,8 @@
 
     <!-- Earnings List -->
     <div *ngIf="!loading && !error && earnings.length > 0" class="earnings-list">
-      <mat-card class="earning-card" *ngFor="let earning of earnings" [class.recent-earning]="earning.isRecentEarning" [class.today-earning]="earning.isTodayEarning">
+      <mat-card class="earning-card" *ngFor="let earning of earnings" [class.recent-earning]="earning.isRecentEarning"
+        [class.today-earning]="earning.isTodayEarning">
         <div class="earning-header">
           <div class="earning-info">
             <div class="patient-info">
@@ -91,8 +92,16 @@
             <p class="earning-date">{{ formatDate(earning.paymentDate) }}</p>
           </div>
           <div class="earning-status">
-            <mat-icon [class]="getStatusClass(earning.status)">{{ getStatusIcon(earning.status) }}</mat-icon>
-            <span [class]="getStatusClass(earning.status)">{{ earning.status }}</span>
+            <mat-icon [ngClass]="{
+              'status-green-tick': earning.status?.toLowerCase() === 'paid' || earning.status?.toLowerCase() === 'completed' || earning.status?.toLowerCase() === 'success',
+              'status-pending': earning.status?.toLowerCase() === 'pending',
+              'status-refunded': earning.status?.toLowerCase() === 'refunded'
+            }">{{ getStatusIcon(earning.status) }}</mat-icon>
+            <span [ngClass]="{
+              'status-green-paid': earning.status?.toLowerCase() === 'paid' || earning.status?.toLowerCase() === 'completed' || earning.status?.toLowerCase() === 'success',
+              'status-pending': earning.status?.toLowerCase() === 'pending',
+              'status-refunded': earning.status?.toLowerCase() === 'refunded'
+            }">{{ earning.status }}</span>
           </div>
         </div>
 

@@ -4,7 +4,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ProviderService } from '../../../core/services/provider.service';
 import { AppointmentService } from '../../../core/services/appointment.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Observable } from 'rxjs';
+import { UserService } from '../../../core/services/user.service';
+import { Observable, firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-book-appointment',
@@ -28,12 +29,14 @@ export class BookAppointmentComponent implements OnInit {
     private fb: FormBuilder,
     private providerService: ProviderService,
     private appointmentService: AppointmentService,
-    private authService: AuthService
+    private authService: AuthService,
+    private userService: UserService
   ) {
     this.appointmentForm = this.fb.group({
       date: ['', Validators.required],
       time: ['', Validators.required],
       slotId: ['', Validators.required],
+      serviceType: ['General Consultation', Validators.required],
       reason: ['', Validators.required]
     });
   }
@@ -50,8 +53,28 @@ export class BookAppointmentComponent implements OnInit {
     this.error = '';
 
     this.providerService.getProviderById(Number(this.providerId)).subscribe({
-      next: (provider) => {
-        this.provider = provider;
+      next: async (provider) => {
+        // Initial assignment
+        this.provider = {
+          ...provider,
+          fullName: provider.fullName || provider.FullName || `User #${provider.userId}`,
+          email: provider.email || provider.Email || 'N/A'
+        };
+
+        // Failsafe: if name is still a placeholder (User # or Provider #), fetch from public AuthService endpoint
+        const currentName = this.provider.fullName || '';
+        if (currentName.startsWith('User #') || currentName.startsWith('Provider #') || !currentName || currentName === 'N/A') {
+          try {
+            const user = await firstValueFrom(this.userService.getUserById(provider.userId)).catch(() => null);
+            if (user) {
+              this.provider.fullName = user.fullName;
+              this.provider.email = user.email;
+            }
+          } catch (err) {
+            console.warn('Failed to resolve provider name from AuthService:', err);
+          }
+        }
+
         this.loading = false;
       },
       error: (err) => {
@@ -151,7 +174,7 @@ export class BookAppointmentComponent implements OnInit {
       patientId: user?.userId,
       providerId: Number(this.providerId),
       slotId: formValues.slotId,
-      serviceType: selectedSlot?.serviceType || 'General Consultation',
+      serviceType: formValues.serviceType || 'General Consultation',
       appointmentDate: formattedDate,
       startTime: selectedSlot?.startTime || formValues.time,
       endTime: selectedSlot?.endTime || formValues.time,

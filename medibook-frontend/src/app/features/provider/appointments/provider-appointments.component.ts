@@ -8,6 +8,8 @@ import { AddMedicalRecordDialogComponent } from '../../../shared/components/add-
 import { forkJoin } from 'rxjs';
 import { MedicalRecordService } from '../../../core/services/medical-record.service';
 import { PaymentService } from '../../../core/services/payment.service';
+import { UserService } from '../../../core/services/user.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-provider-appointments',
@@ -29,7 +31,8 @@ export class ProviderAppointmentsComponent implements OnInit {
     private authService: AuthService,
     private dialog: MatDialog,
     private medicalRecordService: MedicalRecordService,
-    private paymentService: PaymentService
+    private paymentService: PaymentService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
@@ -57,20 +60,52 @@ export class ProviderAppointmentsComponent implements OnInit {
 
     forkJoin({
       appointments: this.appointmentService.getAppointmentsByProvider(providerId),
-      records: this.medicalRecordService.getMedicalRecordsByProvider(providerId)
+      records: this.medicalRecordService.getMedicalRecordsByProvider(providerId),
+      payments: this.paymentService.getPaymentHistory()
     }).subscribe({
-      next: (results) => {
+      next: async (results) => {
         const recordsMap = new Map();
         results.records.forEach(r => recordsMap.set(r.appointmentId, r));
         
-        this.appointments = results.appointments.map(a => {
+        const paymentsMap = new Map();
+        results.payments.forEach((p: any) => paymentsMap.set(p.appointmentId || p.AppointmentId, p));
+        
+        const enrichedAppointments = [];
+        for (let a of results.appointments) {
           const id = a.appointmentId || a.id;
-          return {
+          const payment = paymentsMap.get(id);
+          
+          let enriched = {
             ...a,
             hasMedicalRecord: recordsMap.has(id),
-            medicalRecord: recordsMap.get(id)
+            medicalRecord: recordsMap.get(id),
+            paymentStatus: payment ? (payment.status || payment.Status) : (a.paymentStatus || 'Unpaid'),
+            paymentMode: payment ? (payment.mode || payment.Mode) : (a.paymentMode || ''),
+            transactionId: payment ? (payment.transactionId || payment.TransactionId) : (a.transactionId || '')
           };
-        });
+
+          // Resolve Patient Name if placeholder
+          if (!enriched.patientName || enriched.patientName.includes('Anonymous') || enriched.patientName.startsWith('User #')) {
+            try {
+              const userData = await firstValueFrom(this.userService.getUserById(enriched.patientId)).catch(() => null);
+              if (userData) {
+                enriched.patientName = userData.fullName || userData.userName || `Patient #${enriched.patientId}`;
+                enriched.patientEmail = userData.email || 'N/A';
+              }
+            } catch (err) {
+              console.warn(`Failed to resolve patient name for ${enriched.patientId}:`, err);
+            }
+          }
+          
+          // 2. Resolve Provider Details (Current Provider)
+          enriched.providerName = this.userName || enriched.providerName;
+          enriched.providerEmail = this.currentUser?.email || enriched.providerEmail;
+          enriched.specialization = this.currentUser?.specialization || enriched.specialization || 'Healthcare Provider';
+
+          enrichedAppointments.push(enriched);
+        }
+
+        this.appointments = enrichedAppointments;
         this.loading = false;
       },
       error: (err) => {

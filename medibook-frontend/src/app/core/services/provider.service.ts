@@ -67,6 +67,16 @@ export class ProviderService {
     );
   }
 
+  createProvider(providerData: any): Observable<any> {
+    console.log('Creating provider profile:', providerData);
+    return this.http.post<any>(`${this.apiUrl}/providers`, providerData).pipe(
+      catchError((err) => {
+        console.error('Create provider error:', err);
+        throw err;
+      })
+    );
+  }
+
   updateProvider(id: number, providerData: any): Observable<any> {
     console.log('Updating provider:', id, providerData);
     return this.http.put<any>(`${this.apiUrl}/providers/${id}`, providerData).pipe(

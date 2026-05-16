@@ -117,12 +117,28 @@ export class ProviderDashboardComponent implements OnInit {
           this.averageRating = Math.round((totalRating / reviews.length) * 10) / 10;
         }
 
-        // Process Slots (Cross-reference with appointments for accuracy)
+        // Process Slots (Synchronized with active appointments for real-time accuracy)
         this.totalSlots = slots.length;
-        this.bookedSlots = slots.filter(s => {
-          return appointments.some((a: any) => a.slotId === s.slotId && a.status !== 'Cancelled');
+        
+        // Count a slot as booked if it's marked as such OR has an active appointment
+        this.bookedSlots = slots.filter(slot => {
+          const hasActiveAppt = appointments.some((a: any) => 
+            (a.slotId === slot.slotId || a.SlotId === slot.slotId) && a.status !== 'Cancelled'
+          );
+          return slot.isBooked || slot.IsBooked || hasActiveAppt;
         }).length;
+
         this.availableSlots = this.totalSlots - this.bookedSlots;
+        
+        // Failsafe: if slots database is empty/unreachable but appointments exist
+        if (this.totalSlots === 0 && appointments.length > 0) {
+          const activeAppts = appointments.filter((a: any) => 
+            a.status === 'Scheduled' || a.status === 'Confirmed' || a.status === 'Completed'
+          );
+          this.bookedSlots = activeAppts.length;
+          this.totalSlots = this.bookedSlots;
+          this.availableSlots = 0;
+        }
 
         // Process Recent Activities
         const activities: any[] = [];

@@ -115,6 +115,30 @@
         </mat-card-content>
       </mat-card>
     </div>
+    
+    <!-- Service Selection -->
+    <mat-card class="form-card service-card">
+      <div class="card-header">
+        <mat-icon>medical_services</mat-icon>
+        <h3>Select Service</h3>
+      </div>
+      <mat-card-content>
+        <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()">
+          <div class="form-field">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Service Type</mat-label>
+              <mat-select formControlName="serviceType">
+                <mat-option value="General Consultation">General Consultation</mat-option>
+                <mat-option value="Follow-up Visit">Follow-up Visit</mat-option>
+                <mat-option value="Specialist Consultation">Specialist Consultation</mat-option>
+                <mat-option value="Emergency">Emergency</mat-option>
+              </mat-select>
+              <mat-error>Service type is required</mat-error>
+            </mat-form-field>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
 
     <!-- Reason Section -->
     <mat-card class="reason-card">

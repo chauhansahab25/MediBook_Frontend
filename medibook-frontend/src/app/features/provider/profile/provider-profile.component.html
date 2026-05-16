@@ -62,7 +62,14 @@
 
           <div class="form-group">
             <label>Specialization</label>
-            <input type="text" [(ngModel)]="profile.specialization" name="specialization" class="form-input" placeholder="e.g. Cardiologist">
+            <select [(ngModel)]="profile.specialization" name="specialization" class="form-input">
+              <option value="" disabled selected>Select your specialization</option>
+              <option value="Cardiology">Cardiology</option>
+              <option value="Dermatology">Dermatology</option>
+              <option value="General Medicine">General Medicine</option>
+              <option value="Gynecologist">Gynecologist</option>
+              <option value="Pediatrics">Pediatrics</option>
+            </select>
           </div>
 
           <div class="form-group">

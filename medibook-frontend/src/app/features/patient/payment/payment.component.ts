@@ -103,6 +103,7 @@ export class PaymentComponent implements OnInit {
     const paymentData = {
       appointmentId: this.appointmentId,
       patientId: this.authService.currentUserValue?.userId,
+      providerId: this.providerId,
       amount: this.amount,
       status: 'Failed',
       mode: 'Razorpay',
@@ -132,6 +133,7 @@ export class PaymentComponent implements OnInit {
     const paymentData = {
       appointmentId: this.appointmentId,
       patientId: this.authService.currentUserValue?.userId,
+      providerId: this.providerId,
       amount: this.amount,
       status: 'Paid',
       mode: 'Razorpay',

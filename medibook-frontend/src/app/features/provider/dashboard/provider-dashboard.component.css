@@ -274,7 +274,7 @@
 }
 
 .dashboard-card.earnings::before {
-  background: linear-gradient(90deg, #4caf50, #2e7d32);
+  background: linear-gradient(90deg, #00acc1, #00838f);
 }
 
 .card-icon-wrapper {
@@ -304,7 +304,7 @@
 }
 
 .earnings .card-icon-wrapper {
-  background: linear-gradient(135deg, #f1f8e9, #dcedc8);
+  background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
 }
 
 .card-icon {
@@ -317,7 +317,7 @@
 .appointments .card-icon { color: #00838f; }
 .profile .card-icon { color: #00838f; }
 .reviews .card-icon { color: #00838f; }
-.earnings .card-icon { color: #2e7d32; }
+.earnings .card-icon { color: #00838f; }
 
 .dashboard-card mat-card-header {
   padding: 16px 24px 8px;

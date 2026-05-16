@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { PaymentService } from '../../../core/services/payment.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
+import { ProviderService } from '../../../core/services/provider.service';
+import { UserService } from '../../../core/services/user.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-transaction-history',
@@ -17,7 +20,9 @@ export class TransactionHistoryComponent implements OnInit {
   constructor(
     private paymentService: PaymentService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private providerService: ProviderService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
@@ -31,15 +36,15 @@ export class TransactionHistoryComponent implements OnInit {
 
     // Get payment history for the current user
     this.paymentService.getPaymentHistory().subscribe({
-      next: (payments: any[]) => {
+      next: async (payments: any[]) => {
         // Filter payments for current user
-        this.transactions = payments.filter(payment => 
+        let userTransactions = payments.filter(payment => 
           payment.patientId === this.currentUser?.userId || 
           payment.patientId === this.currentUser?.id
         );
         
         // Process transactions to ensure refunded amount is set to ₹500
-        this.transactions = this.transactions.map(transaction => {
+        userTransactions = userTransactions.map(transaction => {
           if (transaction.status === 'Refunded' && !transaction.refundAmount) {
             // Set refund amount to ₹500 for refunded transactions if not already set
             transaction.refundAmount = 500;
@@ -48,11 +53,67 @@ export class TransactionHistoryComponent implements OnInit {
         });
         
         // Sort by date (most recent first)
-        this.transactions.sort((a, b) => 
+        userTransactions.sort((a, b) => 
           new Date(b.createdAt || b.paymentDate).getTime() - 
           new Date(a.createdAt || a.paymentDate).getTime()
         );
         
+        // Resolve Provider Names
+        try {
+          const providerPromises = userTransactions.map(async (t) => {
+            const pId = t.providerId || t.ProviderId;
+            if (!pId) return { ...t, providerName: 'Unknown Provider' };
+
+            let providerName = 'Unknown Provider';
+            
+            // 1. Try to get provider profile
+            try {
+              const providerProfile = await firstValueFrom(this.providerService.getProviderById(pId)).catch(() => null);
+              
+              if (providerProfile) {
+                const profileName = providerProfile.fullName || providerProfile.FullName || '';
+                const isPlaceholder = profileName.startsWith('Provider #') || profileName.startsWith('User #') || profileName === 'N/A';
+                
+                if (profileName && !isPlaceholder) {
+                  providerName = profileName;
+                } else if (providerProfile.userId || providerProfile.UserId) {
+                  // 2. Try to get user details if profile name is empty/placeholder
+                  const uId = providerProfile.userId || providerProfile.UserId;
+                  const user = await firstValueFrom(this.userService.getUserById(uId)).catch(() => null);
+                  if (user) {
+                    providerName = user.fullName || user.FullName || providerName;
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn('Provider lookup failed', err);
+            }
+
+            // 3. Last resort direct fallback
+            if (providerName === 'Unknown Provider' || providerName.startsWith('Provider #') || providerName.startsWith('User #')) {
+               try {
+                  // Only try this if we think pId might match userId or if we have no other option
+                  const user = await firstValueFrom(this.userService.getUserById(pId)).catch(() => null);
+                  if (user && (user.fullName || user.FullName)) {
+                    providerName = user.fullName || user.FullName;
+                  }
+               } catch (e) { }
+            }
+
+            // Cleanup placeholders for final display
+            if (providerName === 'Unknown Provider' || providerName.startsWith('User #') || providerName.startsWith('Provider #') || providerName === 'N/A') {
+              providerName = `Provider #${pId}`;
+            }
+
+            return { ...t, providerName };
+          });
+
+          this.transactions = await Promise.all(providerPromises);
+        } catch (err) {
+          console.warn('Failed to resolve some provider names:', err);
+          this.transactions = userTransactions;
+        }
+
         console.log('User transactions:', this.transactions);
         this.loading = false;
       },

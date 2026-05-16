@@ -7,6 +7,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { AppointmentDetailsDialogComponent } from '../../../shared/components/appointment-details-dialog/appointment-details-dialog.component';
 import { AppointmentReviewDialogComponent } from '../../../shared/components/appointment-review-dialog/appointment-review-dialog.component';
 import { RefundDialogComponent } from '../../../shared/components/refund-dialog/refund-dialog.component';
+import { ProviderService } from '../../../core/services/provider.service';
+import { UserService } from '../../../core/services/user.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-patient-appointments',
@@ -24,6 +27,8 @@ export class PatientAppointmentsComponent implements OnInit {
     private appointmentService: AppointmentService,
     private authService: AuthService,
     private paymentService: PaymentService,
+    private providerService: ProviderService,
+    private userService: UserService,
     private dialog: MatDialog
   ) {}
 
@@ -41,8 +46,64 @@ export class PatientAppointmentsComponent implements OnInit {
     this.loading = true;
 
     this.appointmentService.getAppointmentsByPatient(user.userId).subscribe({
-      next: (data) => {
-        this.appointments = data;
+      next: async (data: any[]) => {
+        const enrichedAppointments = [...data];
+
+        // Enrich each appointment with provider details and payment status
+        for (let apt of enrichedAppointments) {
+          // 1. Resolve Provider Details
+          if (!apt.providerName || apt.providerName.startsWith('Provider #') || apt.providerName.startsWith('User #')) {
+            try {
+              const provider = await firstValueFrom(this.providerService.getProviderById(apt.providerId)).catch(() => null);
+              if (provider) {
+                apt.providerName = provider.fullName || provider.FullName || `Provider #${apt.providerId}`;
+                apt.specialization = provider.specialization || provider.Specialization || apt.specialization;
+                
+                if (apt.providerName.startsWith('Provider #') || apt.providerName.startsWith('User #')) {
+                  const userData = await firstValueFrom(this.userService.getUserById(provider.userId)).catch(() => null);
+                  if (userData) {
+                    apt.providerName = userData.fullName;
+                  }
+                }
+              }
+            } catch (err) {
+              console.warn(`Failed to enrich provider for appointment ${apt.appointmentId}:`, err);
+            }
+          }
+
+          // 2. Resolve Real-Time Payment Status
+          try {
+            // Silently handle 404s if no payment record exists yet
+            const payment = await firstValueFrom(this.paymentService.getPaymentByAppointment(apt.appointmentId)).catch(() => null);
+            if (payment) {
+              apt.paymentStatus = payment.status || payment.Status || apt.paymentStatus;
+              apt.paymentAmount = payment.amount || payment.Amount || apt.paymentAmount;
+              apt.transactionId = payment.transactionId || payment.TransactionId || apt.transactionId;
+            } else {
+              // Default states if no payment record is found in the database
+              if (apt.status === 'Scheduled') {
+                apt.paymentStatus = 'Pending';
+              } else if (apt.status === 'Cancelled') {
+                apt.paymentStatus = 'N/A';
+              } else {
+                apt.paymentStatus = 'Unpaid';
+              }
+            }
+          } catch (err) {
+            // Overall catch to prevent the entire list from failing
+            apt.paymentStatus = apt.paymentStatus || 'Pending';
+          }
+          
+          // 3. Resolve Patient Details (Current User)
+          if (apt.patientId === user.userId) {
+            apt.patientName = user.fullName || 'Anonymous';
+            apt.patientEmail = user.email || 'N/A';
+          }
+
+          apt.specialization = apt.specialization || apt.serviceType || 'General Consultation';
+        }
+
+        this.appointments = enrichedAppointments;
         this.filterAppointments();
         this.loading = false;
       },
@@ -60,6 +121,11 @@ export class PatientAppointmentsComponent implements OnInit {
       case 'upcoming':
         this.filteredAppointments = this.appointments.filter(apt => 
           ['Scheduled', 'Confirmed'].includes(apt.status)
+        );
+        break;
+      case 'past':
+        this.filteredAppointments = this.appointments.filter(apt => 
+          ['Completed', 'Cancelled'].includes(apt.status)
         );
         break;
       case 'completed':
@@ -360,6 +426,10 @@ export class PatientAppointmentsComponent implements OnInit {
       case 'Completed': return '#9C27B0';
       case 'Cancelled': return '#F44336';
       case 'Pending': return '#FF9800';
+      case 'Unpaid': return '#78909c';
+      case 'N/A': return '#CFD8DC';
+      case 'Paid': return '#4CAF50';
+      case 'Refunded': return '#FF5722';
       default: return '#757575';
     }
   }
@@ -371,6 +441,10 @@ export class PatientAppointmentsComponent implements OnInit {
       case 'Completed': return 'done_all';
       case 'Cancelled': return 'cancel';
       case 'Pending': return 'hourglass_empty';
+      case 'Unpaid': return 'payments';
+      case 'N/A': return 'remove_circle_outline';
+      case 'Paid': return 'verified';
+      case 'Refunded': return 'undo';
       default: return 'help';
     }
   }

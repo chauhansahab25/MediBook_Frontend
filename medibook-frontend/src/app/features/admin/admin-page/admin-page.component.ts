@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { ProviderService } from '../../../core/services/provider.service';
@@ -143,27 +144,59 @@ export class AdminPageComponent implements OnInit {
 
     // Load providers and users, then merge the data
     Promise.all([
-      this.providerService.getProviders().toPromise(),
-      this.userService.getUsers().toPromise()
+      firstValueFrom(this.providerService.getProviders()).catch(() => []),
+      firstValueFrom(this.userService.getUsers()).catch(() => [])
     ]).then(([providers, users]) => {
-      console.log('Providers loaded:', providers);
-      console.log('Users loaded:', users);
+      console.log('Admin: Robust Sync - Providers:', providers?.length, 'Users:', users?.length);
       
-      // Merge provider data with user data
-      this.dataList = (providers || []).map((provider: any) => {
-        const user = (users || []).find((u: any) => u.userId === provider.userId);
-        return {
-          ...provider,
-          fullName: user?.fullName || `Provider #${provider.providerId}`,
-          email: user?.email || 'N/A',
-          phone: user?.phone || 'N/A'
-        };
+      const mergedList: any[] = [];
+      const processedUserIds = new Set<number>();
+
+      // 1. Process all entries from the Providers API
+      (providers || []).forEach((p: any) => {
+        const uId = p.userId || p.UserId;
+        const user = (users || []).find((u: any) => (u.userId || u.UserId) === uId);
+        
+        // Improved name resolution: Priority: Profile Name > User Name > Email Handle > ID Fallback
+        const userEmail = user?.email || user?.Email || p.email || p.Email;
+        const emailHandle = userEmail ? userEmail.split('@')[0] : null;
+        const resolvedName = p.fullName || p.FullName || user?.fullName || user?.FullName || emailHandle || `Provider #${p.providerId || p.ProviderId || uId}`;
+
+        processedUserIds.add(uId);
+        mergedList.push({
+          ...p,
+          userId: uId,
+          fullName: resolvedName,
+          email: userEmail || 'N/A',
+          isVerified: p.isVerified === true || p.IsVerified === true || p.status === 'Verified' || p.Status === 'Verified' || user?.verified
+        });
       });
-      
-      console.log('Merged provider data:', this.dataList);
+
+      // 2. Add any Users with the 'Provider' role who weren't in the Providers list
+      (users || []).forEach((u: any) => {
+        const uId = u.userId || u.UserId;
+        const role = (u.role || u.Role || '').toLowerCase();
+        
+        if (role === 'provider' && !processedUserIds.has(uId)) {
+          const userEmail = u.email || u.Email;
+          const emailHandle = userEmail ? userEmail.split('@')[0] : null;
+          const resolvedName = u.fullName || u.FullName || emailHandle || `New Provider #${uId}`;
+
+          mergedList.push({
+            userId: uId,
+            fullName: resolvedName,
+            email: userEmail || 'N/A',
+            isVerified: u.verified === true || u.Verified === true || u.isVerified === true,
+            status: 'Pending Profile',
+            specialization: 'Not Assigned'
+          });
+        }
+      });
+
+      this.dataList = mergedList;
       this.totalCount = this.dataList.length;
       this.activeCount = this.dataList.filter((p: any) => p.isVerified).length;
-      this.pendingCount = this.dataList.filter((p: any) => !p.isVerified).length;
+      this.pendingCount = this.dataList.length - this.activeCount;
       this.loading = false;
     }).catch((err) => {
       console.error('Failed to load providers:', err);
@@ -173,182 +206,242 @@ export class AdminPageComponent implements OnInit {
   }
 
   loadAppointments(): void {
-    this.appointmentService.getAppointments().subscribe({
-      next: (appointments: any[]) => {
-        console.log('Raw appointments from backend:', appointments);
+    this.loading = true;
+    this.error = null;
+
+    // Load appointments, users, providers, and payments to merge data
+    Promise.all([
+      firstValueFrom(this.appointmentService.getAppointments()),
+      firstValueFrom(this.userService.getUsers()),
+      firstValueFrom(this.providerService.getProviders()),
+      firstValueFrom(this.paymentService.getPaymentHistory())
+    ]).then(([appointments, users, providers, payments]) => {
+      console.log('Data loaded for merging:', { appointments, users, providers, payments });
+      
+      this.dataList = (appointments || []).map((a: any) => {
+        if (!a) return null;
+
+        // Find patient user account
+        const patientUser = (users || []).find((u: any) => u.userId === a.patientId);
         
-        this.dataList = appointments.map((a: any) => {
-          // Handle null/undefined appointment object
-          if (!a) {
-            console.warn('Null appointment found:', a);
-            return null;
-          }
-          
-          const mapped = {
-            appointmentId: a.appointmentId || 0,
-            patientId: a.patientId || 0,
-            providerId: a.providerId || 0,
-            slotId: a.slotId || 0,
-            patientName: a.patientName || `Patient #${a.patientId || 'Unknown'}`,
-            providerName: a.providerName || `Provider #${a.providerId || 'Unknown'}`,
-            specialization: a.specialization || 'N/A',
-            serviceType: a.serviceType || 'Consultation',
-            appointmentDate: a.appointmentDate || new Date(),
-            startTime: a.startTime || new Date(),
-            endTime: a.endTime || new Date(),
-            modeOfConsultation: a.modeOfConsultation || 'InPerson',
-            status: a.status || 'Unknown',
-            notes: a.notes || '',
-            paymentStatus: a.paymentStatus || 'Pending',
-            paymentAmount: a.paymentAmount || 0,
-            paymentMode: a.paymentMode || '',
-            transactionId: a.transactionId || '',
-            cancelledBy: a.cancelledBy || '',
-            createdAt: a.createdAt || new Date(),
-            updatedAt: a.updatedAt || new Date()
-          };
-          console.log('Mapped appointment:', mapped);
-          return mapped;
-        }).filter(a => a !== null); // Remove any null appointments
+        // Find provider profile
+        const providerProfile = (providers || []).find((p: any) => p.providerId === a.providerId);
+        // Find provider user account to get their name
+        const providerUser = providerProfile ? (users || []).find((u: any) => u.userId === providerProfile.userId) : null;
         
-        this.totalCount = appointments.length;
-        this.activeCount = appointments.filter((a: any) => a && (a.status === 'Scheduled' || a.status === 'Confirmed')).length;
-        this.pendingCount = appointments.filter((a: any) => a && a.status === 'Pending').length;
-        this.loading = false;
-        
-        console.log('Final dataList:', this.dataList);
-        console.log('Total count:', this.totalCount);
-        console.log('DataList length:', this.dataList.length);
-      },
-      error: (err: any) => {
-        this.error = 'Failed to load appointments: ' + (err.message || 'Unknown error');
-        this.loading = false;
-      }
+        // Find payment for this appointment (handle both appointmentId and AppointmentId)
+        const payment = (payments || []).find((p: any) => {
+          const pApptId = p.appointmentId || p.AppointmentId;
+          const aApptId = a.appointmentId || a.id;
+          return pApptId === aApptId && pApptId !== undefined;
+        });
+
+        return {
+          ...a,
+          patientName: patientUser?.fullName || a.patientName || `Patient #${a.patientId || 'Unknown'}`,
+          providerName: providerUser?.fullName || a.providerName || `Provider #${a.providerId || 'Unknown'}`,
+          specialization: providerProfile?.specialization || a.specialization || 'N/A',
+          paymentStatus: payment ? (payment.status || payment.Status) : (a.paymentStatus || 'Pending'),
+          paymentAmount: payment ? (payment.amount || payment.Amount) : (a.paymentAmount || 0),
+          transactionId: payment ? (payment.transactionId || payment.TransactionId) : (a.transactionId || '')
+        };
+      }).filter(a => a !== null);
+
+      this.totalCount = this.dataList.length;
+      this.activeCount = this.dataList.filter((a: any) => a.status === 'Scheduled' || a.status === 'Confirmed').length;
+      this.pendingCount = this.dataList.filter((a: any) => a.status === 'Pending').length;
+      this.loading = false;
+      
+      console.log('Enriched appointments list:', this.dataList);
+    }).catch(err => {
+      console.error('Failed to load enriched appointments:', err);
+      this.error = 'Failed to load appointments: ' + (err.message || 'Unknown error');
+      this.loading = false;
     });
   }
 
   loadPayments(): void {
-    this.paymentService.getPaymentHistory().subscribe({
-      next: (payments: any[]) => {
-        console.log('=== Payments Loaded ===', payments);
-        this.dataList = payments.map((p: any) => ({
-          ...p,
-          date: p.createdAt || p.paymentDate,
-          amount: p.amount || p.paymentAmount
-        }));
+    this.loading = true;
+    this.error = null;
+
+    Promise.all([
+      firstValueFrom(this.paymentService.getPaymentHistory()),
+      firstValueFrom(this.userService.getUsers()),
+      firstValueFrom(this.providerService.getProviders()),
+      firstValueFrom(this.appointmentService.getAppointments())
+    ]).then(([payments, users, providers, appointments]) => {
+      console.log('=== Payments Loaded ===', payments);
+      // Process payments and merge with other data
+      this.dataList = (payments || []).map((p: any) => {
+        const user = (users || []).find((u: any) => u.userId === (p.patientId || p.PatientId));
         
-        // Calculate real totals
-        this.totalCount = payments.length;
-        this.activeCount = payments.filter((p: any) => 
-          p.status === 'Completed' || p.status === 'Paid' || p.status === 'Success'
-        ).length;
-        
-        // Calculate completed and pending counts
-        this.completedPayments = payments.filter((p: any) => 
-          p.status === 'Completed' || p.status === 'Paid' || p.status === 'Success'
-        ).length;
-        this.pendingPayments = payments.filter((p: any) => 
-          p.status === 'Pending' || p.status === 'Processing'
-        ).length;
-        
-        // Calculate total revenue: completed payments + platform fees from refunded payments
-        const completedRevenue = payments
-          .filter((p: any) => p.status === 'Completed' || p.status === 'Paid' || p.status === 'Success')
-          .reduce((sum: number, p: any) => sum + (parseFloat(p.amount || p.paymentAmount || 0)), 0);
-        
-        // Add platform fees (₹50) from refunded payments
-        const refundedPlatformFees = payments
-          .filter((p: any) => p.status === 'Refunded')
-          .reduce((sum: number, p: any) => {
-            const platformFee = 50; // Fixed platform fee
-            const refundAmount = parseFloat(p.refundAmount || p.amount - platformFee || 0);
-            const originalAmount = parseFloat(p.amount || 0);
-            return sum + (originalAmount - refundAmount); // Platform fee = original - refund
-          }, 0);
-        
-        this.totalRevenue = completedRevenue + refundedPlatformFees;
-        
-        console.log(`Revenue calculation: ${completedRevenue} (completed) + ${refundedPlatformFees} (platform fees) = ${this.totalRevenue}`);
-        
-        // Calculate today's payments - includes completed payments + platform fees from refunded payments
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        // Today's completed payments
-        const todayCompletedRevenue = payments
-          .filter((p: any) => {
-            const paymentDate = new Date(p.createdAt || p.paymentDate);
-            return paymentDate >= today && (p.status === 'Completed' || p.status === 'Paid' || p.status === 'Success');
-          })
-          .reduce((sum: number, p: any) => sum + (parseFloat(p.amount || p.paymentAmount || 0)), 0);
-        
-        // Today's platform fees from refunded payments
-        const todayRefundedPlatformFees = payments
-          .filter((p: any) => {
-            const paymentDate = new Date(p.createdAt || p.paymentDate);
-            return paymentDate >= today && p.status === 'Refunded';
-          })
-          .reduce((sum: number, p: any) => {
-            const platformFee = 50; // Fixed platform fee
-            const refundAmount = parseFloat(p.refundAmount || p.amount - platformFee || 0);
-            const originalAmount = parseFloat(p.amount || 0);
-            return sum + (originalAmount - refundAmount); // Platform fee = original - refund
-          }, 0);
-        
-        this.todayPayments = todayCompletedRevenue + todayRefundedPlatformFees;
-        
-        console.log(`Today's payments calculation: ${todayCompletedRevenue} (completed) + ${todayRefundedPlatformFees} (platform fees) = ${this.todayPayments}`);
-        
-        // Track last payment update time
-        const recentPayments = payments
-          .filter((p: any) => p.createdAt || p.paymentDate)
-          .sort((a: any, b: any) => new Date(b.createdAt || b.paymentDate).getTime() - new Date(a.createdAt || a.paymentDate).getTime());
-        
-        if (recentPayments.length > 0) {
-          this.lastPaymentUpdate = new Date(recentPayments[0].createdAt || recentPayments[0].paymentDate);
+        let providerId = p.providerId || p.ProviderId;
+        if (!providerId && (p.appointmentId || p.AppointmentId)) {
+          const apptId = p.appointmentId || p.AppointmentId;
+          const appt = (appointments || []).find((a: any) => (a.appointmentId || a.id || a.AppointmentId) === apptId);
+          if (appt) {
+            providerId = appt.providerId || appt.ProviderId;
+          }
         }
         
-        this.loading = false;
-      },
-      error: (err: any) => {
-        this.error = 'Failed to load payments: ' + (err.message || 'Unknown error');
-        this.loading = false;
+        return {
+          ...p,
+          paymentId: p.paymentId || p.PaymentId || p.id,
+          patientName: user?.fullName || user?.FullName || `Patient #${p.patientId || p.PatientId}`,
+          providerName: this.getProviderName(providerId, providers, users),
+          date: p.createdAt || p.CreatedAt || p.paymentDate || p.PaymentDate,
+          amount: p.amount || p.Amount || p.paymentAmount || p.PaymentAmount || 0,
+          status: p.status || p.Status || 'Pending'
+        };
+      });
+      
+      console.log('Processed Payments Data:', this.dataList);
+
+      // 1. Calculate Overall Stats
+      this.totalCount = this.dataList.length;
+      
+      this.completedPayments = this.dataList.filter((p: any) => 
+        ['Completed', 'Paid', 'Success'].includes(p.status)
+      ).length;
+
+      this.pendingPayments = this.dataList.filter((p: any) => 
+        ['Pending', 'Processing'].includes(p.status)
+      ).length;
+      
+      this.activeCount = this.completedPayments;
+      
+      // 2. Calculate Total Revenue (Completed Payments + Refund Fees)
+      const completedRevenue = this.dataList
+        .filter((p: any) => ['Completed', 'Paid', 'Success'].includes(p.status))
+        .reduce((sum: number, p: any) => sum + (parseFloat(p.amount || 0)), 0);
+      
+      const refundedPlatformFees = this.dataList
+        .filter((p: any) => p.status === 'Refunded')
+        .reduce((sum: number, p: any) => {
+          const platformFee = 50; 
+          const original = parseFloat(p.amount || 0);
+          const refunded = parseFloat(p.refundAmount || p.RefundAmount || 0);
+          // If refund amount is explicitly set, platform fee is original - refund. Else assume 50.
+          return sum + (refunded > 0 ? (original - refunded) : platformFee);
+        }, 0);
+      
+      this.totalRevenue = completedRevenue + refundedPlatformFees;
+      console.log('Total Revenue (from DB):', this.totalRevenue);
+      
+      // 3. Calculate "Today's" (Last 24h) Payments
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+      
+      const todayCompletedRevenue = this.dataList
+        .filter((p: any) => {
+          const pDate = new Date(p.date);
+          return pDate >= twentyFourHoursAgo && ['Completed', 'Paid', 'Success'].includes(p.status);
+        })
+        .reduce((sum: number, p: any) => sum + (parseFloat(p.amount || 0)), 0);
+      
+      const todayRefundedFees = this.dataList
+        .filter((p: any) => {
+          const pDate = new Date(p.date);
+          return pDate >= twentyFourHoursAgo && p.status === 'Refunded';
+        })
+        .reduce((sum: number, p: any) => {
+          const platformFee = 50;
+          const original = parseFloat(p.amount || 0);
+          const refunded = parseFloat(p.refundAmount || p.RefundAmount || 0);
+          return sum + (refunded > 0 ? (original - refunded) : platformFee);
+        }, 0);
+      
+      this.todayPayments = todayCompletedRevenue + todayRefundedFees;
+      console.log('Last 24h Revenue (from DB):', this.todayPayments);
+      console.log('24h Revenue calculated:', this.todayPayments);
+      
+      // Track last payment update time
+      const recentPayments = (payments || [])
+        .filter((p: any) => p.createdAt || p.paymentDate)
+        .sort((a: any, b: any) => new Date(b.createdAt || b.paymentDate).getTime() - new Date(a.createdAt || a.paymentDate).getTime());
+      
+      if (recentPayments.length > 0) {
+        this.lastPaymentUpdate = new Date(recentPayments[0].createdAt || recentPayments[0].paymentDate);
       }
+      
+      this.loading = false;
+    }).catch((err) => {
+      console.error('Failed to load payments:', err);
+      this.error = 'Failed to load payments: ' + (err.message || 'Unknown error');
+      this.loading = false;
     });
   }
 
   loadReviews(): void {
-    this.reviewService.getReviews().subscribe({
-      next: (reviews: any[]) => {
-        console.log('=== Reviews Loaded ===', reviews);
-        this.dataList = reviews;
-        this.totalCount = reviews.length;
-        this.loading = false;
-      },
-      error: (err: any) => {
-        this.error = 'Failed to load reviews: ' + (err.message || 'Unknown error');
-        this.loading = false;
-      }
+    this.loading = true;
+    this.error = null;
+
+    Promise.all([
+      firstValueFrom(this.reviewService.getReviews()),
+      firstValueFrom(this.userService.getUsers()),
+      firstValueFrom(this.providerService.getProviders())
+    ]).then(([reviews, users, providers]) => {
+      console.log('=== Reviews Loaded ===', reviews);
+      this.dataList = (reviews || []).map((r: any) => {
+        // If the review is anonymous, don't try to look up the user by ID
+        if (r.isAnonymous) {
+          return {
+            ...r,
+            patientName: 'Anonymous Patient',
+            providerName: this.getProviderName(r.providerId, providers, users),
+            date: r.createdAt || r.date || r.reviewDate
+          };
+        }
+
+        const patientUser = (users || []).find((u: any) => u.userId === r.patientId);
+        
+        return {
+          ...r,
+          patientName: r.patientName || patientUser?.fullName || (r.patientId ? `Patient #${r.patientId}` : 'Anonymous Patient'),
+          providerName: r.providerName || this.getProviderName(r.providerId, providers, users),
+          date: r.createdAt || r.date || r.reviewDate
+        };
+      });
+      this.totalCount = (reviews || []).length;
+      this.loading = false;
+    }).catch((err) => {
+      console.error('Failed to load reviews:', err);
+      this.error = 'Failed to load reviews: ' + (err.message || 'Unknown error');
+      this.loading = false;
     });
   }
 
+  // Helper method to resolve provider name
+  private getProviderName(providerId: number, providers: any[], users: any[]): string {
+    const providerProfile = (providers || []).find((p: any) => p.providerId === providerId);
+    const providerUser = providerProfile ? (users || []).find((u: any) => u.userId === providerProfile.userId) : null;
+    return providerUser?.fullName || `Provider #${providerId}`;
+  }
+
   loadRecords(): void {
-    this.medicalRecordService.getMedicalRecords().subscribe({
-      next: (records: any[]) => {
-        this.dataList = records.map((r: any) => ({
+    this.loading = true;
+    this.error = null;
+
+    Promise.all([
+      firstValueFrom(this.medicalRecordService.getMedicalRecords()),
+      firstValueFrom(this.userService.getUsers())
+    ]).then(([records, users]) => {
+      this.dataList = (records || []).map((r: any) => {
+        const user = (users || []).find((u: any) => u.userId === r.patientId);
+        return {
           ...r,
-          patientName: r.patientName || `Patient #${r.patientId}`,
+          patientName: user?.fullName || r.patientName || `Patient #${r.patientId}`,
           title: r.diagnosis || 'Medical Record',
           createdAt: r.createdAt,
-          appointmentDate: r.appointmentDate // Add appointment date for display
-        }));
-        this.totalCount = records.length;
-        this.loading = false;
-      },
-      error: (err: any) => {
-        this.error = 'Failed to load medical records: ' + (err.message || 'Unknown error');
-        this.loading = false;
-      }
+          appointmentDate: r.appointmentDate
+        };
+      });
+      this.totalCount = (records || []).length;
+      this.loading = false;
+    }).catch((err) => {
+      console.error('Failed to load medical records:', err);
+      this.error = 'Failed to load medical records: ' + (err.message || 'Unknown error');
+      this.loading = false;
     });
   }
 
@@ -471,6 +564,11 @@ export class AdminPageComponent implements OnInit {
   }
 
   toggleProviderStatus(provider: any): void {
+    if (!provider.providerId) {
+      alert(`Cannot verify ${provider.fullName} yet.\n\nThis user has registered but has not completed their Provider Profile setup. They must fill out their profile information before you can verify them.`);
+      return;
+    }
+
     const action = provider.isVerified ? 'unverify' : 'verify';
     if (!confirm(`Are you sure you want to ${action} ${provider.fullName}?`)) {
       return;
@@ -552,11 +650,29 @@ export class AdminPageComponent implements OnInit {
 
   // Payment Actions
   viewPayment(payment: any): void {
-    alert(`Payment Details:\n\nAmount: ${payment.amount}\nStatus: ${payment.status}\nDate: ${payment.date}\nTransaction ID: ${payment.transactionId || 'N/A'}`);
+    const formattedDate = new Date(payment.date).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    alert(`Payment Details:\n\nPatient: ${payment.patientName}\nProvider: ${payment.providerName}\nAmount: ₹${payment.amount}\nStatus: ${payment.status}\nDate: ${formattedDate}\nTransaction ID: ${payment.transactionId || 'N/A'}`);
   }
 
   deletePayment(payment: any): void {
-    if (confirm(`Are you sure you want to delete this payment of ₹${payment.amount}?\n\nThis will permanently remove the transaction and reduce the total revenue.\n\nTransaction ID: ${payment.transactionId || 'N/A'}`)) {
+    const isRefunded = payment.status === 'Refunded';
+    const isSuccess = ['Completed', 'Paid', 'Success'].includes(payment.status);
+    
+    let confirmMessage = `Are you sure you want to delete this payment of ₹${payment.amount}?\n\nThis will permanently remove the transaction record.\n\nTransaction ID: ${payment.transactionId || 'N/A'}`;
+    
+    if (isRefunded) {
+      confirmMessage += `\n\n⚠️ This is a REFUNDED payment. Deleting it will reduce total revenue by the ₹50 platform fee that was kept.`;
+    } else if (isSuccess) {
+      confirmMessage += `\n\n⚠️ This will reduce your total revenue by the full amount of ₹${payment.amount}.`;
+    }
+
+    if (confirm(confirmMessage)) {
       console.log('Deleting payment:', payment);
       
       this.paymentService.deletePayment(payment.paymentId || payment.id).subscribe({
@@ -567,11 +683,9 @@ export class AdminPageComponent implements OnInit {
           
           // Calculate the actual amount to deduct based on payment status
           let deductAmount = 0;
-          if (payment.status === 'Refunded') {
-            // For refunded payments, only deduct the refund amount (not the platform fee)
-            deductAmount = parseFloat(payment.refundAmount || payment.amount - 50 || payment.amount) || 0;
-          } else if (payment.status === 'Completed' || payment.status === 'Paid') {
-            // For completed/paid payments, deduct the full amount
+          if (isRefunded) {
+            deductAmount = 50; 
+          } else if (isSuccess) {
             deductAmount = parseFloat(payment.amount) || 0;
           }
           
@@ -589,7 +703,8 @@ export class AdminPageComponent implements OnInit {
             ['Pending', 'Processing'].includes(p.status)
           ).length;
           
-          alert(`✅ Payment deleted successfully!\n\n₹${payment.amount} has been deducted from total revenue.`);
+          const msgSuffix = deductAmount > 0 ? `\n\n₹${deductAmount} has been deducted from total revenue.` : '';
+          alert(`✅ Payment record deleted successfully!${msgSuffix}`);
         },
         error: (err: any) => {
           console.error('Failed to delete payment:', err);
@@ -646,6 +761,21 @@ export class AdminPageComponent implements OnInit {
         alert('Failed to download record: ' + (err.message || 'Unknown error'));
       }
     });
+  }
+
+  deleteRecord(record: any): void {
+    if (confirm(`Are you sure you want to delete the medical record for ${record.patientName} (${record.title})?`)) {
+      this.medicalRecordService.deleteRecord(record.recordId || record.id).subscribe({
+        next: () => {
+          this.dataList = this.dataList.filter(r => (r.recordId || r.id) !== (record.recordId || record.id));
+          this.totalCount = this.dataList.length;
+          alert('Medical record deleted successfully!');
+        },
+        error: (err) => {
+          alert('Failed to delete medical record: ' + (err.message || 'Unknown error'));
+        }
+      });
+    }
   }
 
   // Notification Actions

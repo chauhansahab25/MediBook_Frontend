@@ -488,9 +488,9 @@
 }
 
 .earning-card.today-earning {
-  border-left: 3px solid #4caf50 !important;
-  background: linear-gradient(90deg, rgba(76, 175, 80, 0.02) 0%, transparent 100%);
-  box-shadow: 0 2px 12px rgba(76, 175, 80, 0.1) !important;
+  border-left: 3px solid #00acc1 !important;
+  background: linear-gradient(90deg, rgba(0, 172, 193, 0.02) 0%, transparent 100%);
+  box-shadow: 0 2px 12px rgba(0, 172, 193, 0.1) !important;
 }
 
 .patient-info h4 {
@@ -525,7 +525,7 @@
 
 .today-badge {
   font-size: 9px;
-  background: #4caf50;
+  background: #00acc1;
   color: white;
   padding: 2px 6px;
   border-radius: 4px;
@@ -574,8 +574,13 @@
 }
 
 /* Status Classes */
-.status-completed {
-  color: #00acc1 !important;
+.status-green-tick {
+  color: #2e7d32 !important; /* Green Tick for Paid */
+}
+
+.status-green-paid {
+  color: #2e7d32 !important; /* Green Paid Text */
+  font-weight: 700 !important;
 }
 
 .status-pending {

@@ -2,7 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { PaymentService } from '../../../core/services/payment.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
-import { interval, Subscription } from 'rxjs';
+import { interval, Subscription, firstValueFrom, forkJoin } from 'rxjs';
+import { UserService } from '../../../core/services/user.service';
+import { AppointmentService } from '../../../core/services/appointment.service';
 
 @Component({
   selector: 'app-earnings',
@@ -30,7 +32,9 @@ export class EarningsComponent implements OnInit, OnDestroy {
 
   constructor(
     private paymentService: PaymentService,
+    private appointmentService: AppointmentService,
     private authService: AuthService,
+    private userService: UserService,
     private router: Router
   ) {}
 
@@ -69,80 +73,76 @@ export class EarningsComponent implements OnInit, OnDestroy {
 
   loadEarnings(): void {
     this.loading = true;
-    console.log('Starting earnings load for provider:', this.currentUser?.userId || this.currentUser?.id);
+    const providerId = Number(this.currentUser?.providerId || this.currentUser?.userId);
     
-    this.paymentService.getPaymentHistory().subscribe({
-      next: (data) => {
-        console.log('Real-time earnings data loaded:', data);
-        console.log('Data type:', typeof data, 'Data length:', data?.length);
-        console.log('Current user:', this.currentUser);
+    // Fetch both provider appointments and payment history to cross-reference
+    forkJoin({
+      appointments: this.appointmentService.getAppointmentsByProvider(providerId),
+      payments: this.paymentService.getPaymentHistory()
+    }).subscribe({
+      next: async (results: any) => {
+        const providerAppointments: any[] = results.appointments;
+        const allPayments: any[] = results.payments;
         
-        // Log sample payment data structure to understand available fields
-        if (data && data.length > 0) {
-          console.log('Sample payment data structure:', JSON.stringify(data[0], null, 2));
-          console.log('Available fields in payment:', Object.keys(data[0]));
-        }
+        // Create a map of appointment IDs for quick lookup
+        const apptIds = new Set(providerAppointments.map((a: any) => a.appointmentId || a.id));
         
-        // Process and filter payments for the current provider
-        // Match admin dashboard logic: include Completed, Paid, Success status
-        // TEMPORARILY DISABLE PROVIDER FILTERING TO SHOW ALL REAL DATA
-        this.earnings = data
-          .filter(payment => {
-            console.log('Filtering payment:', payment, 'Status check:', payment.status);
-            
-            // Only filter by status - show all completed payments
-            const statusMatch = ['Completed', 'Paid', 'Success'].includes(payment.status);
-            
-            console.log('Payment filter result:', { statusMatch, paymentId: payment.paymentId });
-            
-            return statusMatch;
-          })
-          .map(payment => {
-            // Enhance payment data with additional real-time details
-            // Match admin dashboard payment structure
-            return {
-              ...payment,
-              // Ensure all required fields are present with better fallbacks
-              patientName: payment.patientName || 
-                           payment.patient?.fullName || 
-                           payment.patient?.name || 
-                           payment.patientName || 
-                           payment.appointment?.patientName ||
-                           payment.appointment?.patient?.fullName ||
-                           payment.appointment?.patient?.name ||
-                           'Unknown Patient',
-              paymentDate: payment.paymentDate || payment.date || payment.createdAt || new Date().toISOString(),
-              paymentMethod: payment.paymentMethod || payment.paymentType || payment.paymentMode || 'Online',
-              transactionId: payment.transactionId || payment.id || payment.paymentId || `TXN${Date.now()}`,
-              status: payment.status || 'Completed',
-              // Use amount field like admin dashboard
-              amount: parseFloat(payment.amount || payment.paymentAmount || '0'),
-              // Add real-time processing info
-              processedAt: new Date().toISOString(),
-              isRealTime: true
-            };
-          })
-          .sort((a, b) => new Date(b.paymentDate || b.paymentDate || b.createdAt).getTime() - new Date(a.paymentDate || a.paymentDate || a.createdAt).getTime());
-
-        console.log('Filtered earnings for provider:', this.earnings);
-        console.log('Filtered earnings count:', this.earnings.length);
-
-        // Calculate earnings with real-time data
-        this.calculateEarnings();
-        
-        // Update last updated timestamp
-        this.lastUpdated = new Date();
-        
-        this.loading = false;
-        console.log('Final earnings calculation:', {
-          totalCompleted: this.totalCompleted,
-          totalEarnings: this.totalEarnings,
-          todayCompleted: this.todayCompleted,
-          todayEarnings: this.todayEarnings
+        // 1. Filter payments that either have our ProviderId OR match one of our AppointmentIds
+        const filteredData = allPayments.filter((payment: any) => {
+          const pId = Number(payment.providerId || payment.ProviderId);
+          const aId = payment.appointmentId || payment.AppointmentId;
+          const status = (payment.status || payment.Status || '').toLowerCase();
+          
+          const isOurPayment = pId === providerId || apptIds.has(aId);
+          const isPaid = ['completed', 'paid', 'success'].includes(status);
+          
+          return isOurPayment && isPaid;
         });
+
+        // 2. Enrich each payment
+        const enrichedEarnings = [];
+        for (let payment of filteredData) {
+          const aId = payment.appointmentId || payment.AppointmentId;
+          const appt = providerAppointments.find((a: any) => (a.appointmentId || a.id) === aId);
+          
+          let enriched = {
+            ...payment,
+            patientName: appt?.patientName || payment.patientName || 'Unknown Patient',
+            patientId: appt?.patientId || payment.patientId || payment.PatientId,
+            appointmentId: aId,
+            paymentDate: payment.paymentDate || payment.date || payment.createdAt || payment.PaidAt || new Date().toISOString(),
+            paymentMethod: payment.paymentMethod || payment.paymentType || payment.paymentMode || payment.Mode || 'Online',
+            transactionId: payment.transactionId || payment.TransactionId || payment.paymentId || `TXN${Date.now()}`,
+            status: payment.status || payment.Status || 'Completed',
+            amount: parseFloat(payment.amount || payment.Amount || '0'),
+          };
+
+          // Resolve Patient Name if still placeholder
+          if (enriched.patientName === 'Unknown Patient' || enriched.patientName.includes('Anonymous') || enriched.patientName.startsWith('User #')) {
+            try {
+              const userData = await firstValueFrom(this.userService.getUserById(enriched.patientId)).catch(() => null);
+              if (userData) {
+                enriched.patientName = userData.fullName || userData.userName || `Patient #${enriched.patientId}`;
+              }
+            } catch (err) {
+              console.warn(`Failed to resolve patient name for ${enriched.patientId}:`, err);
+            }
+          }
+
+          enrichedEarnings.push(enriched);
+        }
+
+        // 3. Sort and Calculate
+        this.earnings = enrichedEarnings.sort((a, b) => 
+          new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
+        );
+
+        this.calculateEarnings();
+        this.lastUpdated = new Date();
+        this.loading = false;
       },
-      error: (err) => {
-        console.error('PaymentService error:', err);
+      error: (err: any) => {
+        console.error('Failed to load earnings data:', err);
         this.error = 'Failed to load earnings: ' + (err.message || 'Unknown error');
         this.loading = false;
       }

@@ -5,6 +5,9 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { ReviewService } from '../../../core/services/review.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { AppointmentService } from '../../../core/services/appointment.service';
+import { ProviderService } from '../../../core/services/provider.service';
+import { UserService } from '../../../core/services/user.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-reviews',
@@ -19,14 +22,16 @@ export class ReviewsComponent implements OnInit {
     private router: Router,
     private reviewService: ReviewService,
     private authService: AuthService,
-    private appointmentService: AppointmentService
+    private appointmentService: AppointmentService,
+    private providerService: ProviderService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
     this.loadReviews();
   }
 
-  loadReviews(): void {
+  async loadReviews(): Promise<void> {
     const user = this.authService.currentUserValue;
     if (!user || !user.userId) {
       this.router.navigate(['/auth/login']);
@@ -35,45 +40,58 @@ export class ReviewsComponent implements OnInit {
 
     this.loading = true;
 
-    this.reviewService.getReviewsByPatient(user.userId).pipe(
-      switchMap(reviews => {
-        if (reviews.length === 0) return of([]);
+    try {
+      const reviews = await firstValueFrom(this.reviewService.getReviewsByPatient(user.userId));
+      const enrichedReviews = [];
 
-        // For each review, fetch the appointment to get provider details
-        const detailRequests = reviews.map(review => 
-          this.appointmentService.getAppointmentById(review.appointmentId).pipe(
-            map(appt => ({
-              ...review,
-              provider: appt.providerName,
-              specialization: appt.specialization || 'Healthcare Provider',
-              clinic: appt.modeOfConsultation || 'General Consultation',
-              date: this.formatDate(review.reviewDate),
-              id: review.reviewId // Map reviewId to id for compatibility
-            })),
-            catchError(() => of({
-              ...review,
-              provider: 'Unknown Provider',
-              specialization: 'Healthcare',
-              clinic: 'N/A',
-              date: this.formatDate(review.reviewDate),
-              id: review.reviewId
-            }))
-          )
-        );
+      for (let review of reviews) {
+        let enriched = {
+          ...review,
+          provider: 'Healthcare Provider',
+          specialization: 'General Practice',
+          clinic: 'Medical Center',
+          date: this.formatDate(review.reviewDate),
+          id: review.reviewId
+        };
 
-        return forkJoin(detailRequests);
-      })
-    ).subscribe({
-      next: (enrichedReviews) => {
-        this.reviews = enrichedReviews;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading reviews:', error);
-        this.reviews = [];
-        this.loading = false;
+        try {
+          // 1. Try to get details from Appointment
+          const appt = await firstValueFrom(this.appointmentService.getAppointmentById(review.appointmentId)).catch(() => null);
+          if (appt) {
+            enriched.provider = appt.providerName || enriched.provider;
+            enriched.specialization = appt.specialization || appt.serviceType || enriched.specialization;
+            enriched.clinic = appt.modeOfConsultation || enriched.clinic;
+          }
+
+          // 2. Resolve Provider Name if it's a placeholder
+          if (enriched.provider.startsWith('Provider #') || enriched.provider.startsWith('User #') || enriched.provider === 'Healthcare Provider') {
+            const provider = await firstValueFrom(this.providerService.getProviderById(review.providerId)).catch(() => null);
+            if (provider) {
+              enriched.provider = provider.fullName || provider.FullName || enriched.provider;
+              enriched.specialization = provider.specialization || provider.Specialization || enriched.specialization;
+              
+              if (enriched.provider.startsWith('Provider #') || enriched.provider.startsWith('User #')) {
+                const userData = await firstValueFrom(this.userService.getUserById(provider.userId)).catch(() => null);
+                if (userData) {
+                  enriched.provider = userData.fullName;
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.warn(`Failed to enrich review ${review.reviewId}:`, err);
+        }
+
+        enrichedReviews.push(enriched);
       }
-    });
+
+      this.reviews = enrichedReviews;
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+      this.reviews = [];
+    } finally {
+      this.loading = false;
+    }
   }
 
   formatDate(dateStr: string): string {

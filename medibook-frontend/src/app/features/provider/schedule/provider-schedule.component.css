@@ -1316,6 +1316,12 @@
   border: 1px solid #cffafe;
 }
 
+.status-pill.completed {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
 .status-pill mat-icon {
   font-size: 13px;
   width: 13px;
